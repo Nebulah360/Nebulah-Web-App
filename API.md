@@ -4,7 +4,7 @@ All operations are `POST /api/<action>`, `Content-Type: application/json`, `Auth
 
 | Action | Request | Response |
 |---|---|---|
-| `connect` | `{ "target": "" }` | `type`, `kernel`, discovered `drives` |
+| `connect` | `{ "target": "" }` | `type`, `kernel`, discovered `drives`, `temperatures`, `current_title` |
 | `status` | `{}` | same explicit status allowlist |
 | `browse` | `{ "path": "<discovered root or directory>" }` | `files`: name, directory, size |
 | `validate` | `{ "path": "<absolute XEX path>" }` | valid, plugin, hash, checks, ticket |
@@ -15,3 +15,9 @@ Tickets expire in 120 seconds, are single use, and bind to the inspected path/ha
 Errors are JSON `{ "error": "..." }`; 400 validation/adapter rejection, 401 invalid token, 403 wrong Host/Origin, 502 unavailable local adapter, 504 timeout. Raw console exceptions and arbitrary COM objects are never returned.
 
 Future native clients must use authenticated requests with the expected origin, or a separately designed and reviewed native-client authentication flow. No unrestricted CORS is planned.
+
+## Read-only telemetry
+
+`connect` and `status` now return `temperatures: {cpu, gpu, edram, motherboard}` (finite Celsius numbers or null) and `current_title: {executable, title_id}` (strings or null). Sensor support can be partial. Only these explicitly projected fields leave the bridge; raw COM/JRPC responses are not forwarded. The title ID is an eight-character uppercase hexadecimal application ID, not a console or account identifier. Zero/invalid/out-of-range sensor responses become null. An unsupported telemetry command does not fail the core status request.
+
+The browser polls status every 10 seconds while visible and idle. Last-success age is measured in the browser, so the UI can mark stale data even if the bridge stops responding. No telemetry is saved in browser storage. `nebulah.accent` is the only saved browser preference.

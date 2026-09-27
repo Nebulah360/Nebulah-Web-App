@@ -1,7 +1,7 @@
 import sys, struct, unittest, threading, http.client, json
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'bridge'))
-from server import validate_xex, safe_path, Bridge, Handler, HTTPServer
+from server import validate_xex, safe_path, sanitize_telemetry, Bridge, Handler, HTTPServer
 
 def fixture(flags=1):
     b=bytearray(1024);b[:4]=b'XEX2';struct.pack_into('>5I',b,4,flags,512,0,32,0);struct.pack_into('>I',b,32,384);return bytes(b)
@@ -46,4 +46,19 @@ class HTTP(unittest.TestCase):
     def test_auth_and_origin(self):
         self.assertEqual(self.req(token='wrong')[0],401);self.assertEqual(self.req(origin='http://evil.example')[0],403);self.assertEqual(self.req(host='evil.example')[0],403)
     def test_valid_request(self):self.assertEqual(self.req()[0],200)
+class Telemetry(unittest.TestCase):
+    def test_projection_and_partial_sensors(self):
+        s=sanitize_telemetry({'temperatures':{'cpu':58,'gpu':61.5,'edram':None,'motherboard':36,'cpu_key':'secret'},'current_title':{'executable':'Usb9:\\Apps\\default.xex','title_id':'abcdef12','serial':'secret'},'keyvault':'secret'})
+        self.assertEqual(s['temperatures'],{'cpu':58,'gpu':61.5,'edram':None,'motherboard':36})
+        self.assertEqual(s['current_title']['title_id'],'ABCDEF12')
+        self.assertNotIn('secret',json.dumps(s))
+    def test_bad_values_and_missing_plugin(self):
+        for value in [None,True,'58',float('nan'),float('inf'),-1,0,126]:
+            self.assertIsNone(sanitize_telemetry({'temperatures':{'cpu':value}})['temperatures']['cpu'])
+        self.assertEqual(sanitize_telemetry({})['current_title'],{'executable':None,'title_id':None})
+        self.assertIsNone(sanitize_telemetry({'current_title':{'executable':'bad\npath','title_id':'invalid'}})['current_title']['executable'])
+    def test_status_includes_only_allowlist(self):
+        b=Bridge('unused');b.adapter=lambda action:{'type':'Retail','kernel':'Unavailable','drives':['Usb9:\\'],'temperatures':{'cpu':50},'serial':'secret'}
+        s=b.status();self.assertEqual(s['temperatures']['cpu'],50);self.assertNotIn('serial',s)
+
 if __name__=='__main__':unittest.main()

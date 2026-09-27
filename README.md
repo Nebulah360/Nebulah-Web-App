@@ -36,16 +36,26 @@ LAN mode uses HTTP: pairing and traffic are not encrypted. Use only trusted priv
 - Responsive overview, console connection, storage browser, XEX inspection and confirmed application launch.
 - Games and homebrew use their console-provided paths; storage roots are discovered via Neighborhood.
 - Explicit demo mode with sample data; demo launch never sends a console command.
-- Core status allowlist: console type, kernel if supported, and storage roots. Unknown properties display unavailable.
+- Core status allowlist: console type, kernel, storage roots, supported temperatures, running executable and title ID. Unknown properties display unavailable.
 - In-memory session activity; no persistent telemetry, console secrets, serials, account IDs, CPU/DVD keys, or keyvault endpoints.
 - Pairing token, same-origin requests, Host validation, request bounds, fixed adapter operations, and path validation.
 - XEX2 structural checks, SHA-256 file identity, short-lived single-use launch tickets, re-read before launch, and DLL/plugin launch rejection.
 
 Structural validation is **not signature verification**, publisher trust, full loader validation, or a compatibility guarantee. Files over 64 MiB are intentionally rejected by this initial inspector. A small external-write race remains between re-read and console launch; avoid simultaneous console file transfers during launch.
 
+## Appearance and live overview
+
+Use **Appearance** in the header to change the accent with the color wheel, brightness slider, RGB channels (0–255), or 3/6-digit HEX. The controls stay synchronized, preview immediately, and remember the chosen color in this browser. Reset restores Nebulah green. Button/card text automatically uses black or white for contrast; dark accents use a lighter related color for text on dark panels. Keyboard users can adjust hue with left/right, saturation with up/down, and brightness with its slider.
+
+The overview includes CPU, GPU, eDRAM and motherboard temperatures, running executable, title ID, connection, console type, kernel and discovered root count. A sticky status bar keeps current title, CPU/GPU and update age visible across sections. Status is refreshed every 10 seconds while visible and idle; hidden tabs, open dialogs and active operations pause polling. Failed refreshes clear readings, and readings older than 30 seconds are labeled stale. Polling preserves the directory being browsed.
+
+Temperature readings and title ID use **optional read-only JRPC v2 `consolefeatures`** commands through Neighborhood. A compatible console plugin must already be installed; this app does not install or load it. Unsupported sensors are unavailable, never zero or invented. The running executable uses Neighborhood's `RunningProcessInfo.ProgramName`; friendly game-name lookup is not implemented. Demo readings are explicitly labeled samples. The four accepted sensor values are finite numbers above 0 and no higher than 125 °C; outside-range responses display unavailable rather than a false reading.
+
+The new COM telemetry path requires Windows/console verification; automated tests cover response projection and invalid readings, not hardware compatibility. Protocol reference: [JRPC client](https://github.com/XboxChef/JRPC/blob/master/JRPC_Client/JRPC.cs), fixed read operations 15 (temperatures) and 16 (title ID). No private-info commands are issued.
+
 ## Plugin and RTE boundary
 
-**Plugin runtime loading is not implemented in v0.1.** Plugins cannot be treated as ordinary title launches. The UI marks the loader unavailable. Future work needs a tested JRPC/XRPC or Nebulah service adapter with capability negotiation, compatibility checks and explicit load/unload operations. Telemetry, screenshots, title-aware tooling and plugin-slot management are also future work. No arbitrary command or memory-write endpoint is exposed.
+**Plugin runtime loading is not implemented in v0.1.** Plugins cannot be treated as ordinary title launches. The UI marks the loader unavailable. Future work needs a tested JRPC/XRPC or Nebulah service adapter with capability negotiation, compatibility checks and explicit load/unload operations. Screenshots, title-aware tooling and plugin-slot management are future work. No arbitrary command or memory-write endpoint is exposed.
 
 ## Architecture
 
@@ -62,6 +72,8 @@ See [API.md](API.md), [ROADMAP.md](ROADMAP.md), and [AGENTS.md](AGENTS.md).
 ```sh
 python -m unittest discover -s tests -v
 node --check dist/app.js
+node --check dist/theme.js
+node --test tests/theme.test.cjs
 ```
 
 Node is only needed for the JavaScript syntax check, not to run the app. No npm install or third-party Python package is required.

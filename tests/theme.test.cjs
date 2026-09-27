@@ -1,0 +1,4 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const color=require('../dist/theme.js');
+test('HEX accepts shorthand and full values, rejects invalid input',()=>{assert.deepEqual(color.parseHex('#abc'),[170,187,204]);assert.deepEqual(color.parseHex('12aBcF'),[18,171,207]);for(const s of ['','#12','#ggg','#12345678','red'])assert.equal(color.parseHex(s),null)});
+test('RGB and HSV round trip primary, gray, black and arbitrary colors',()=>{for(const rgb of [[0,0,0],[255,255,255],[128,128,128],[255,0,0],[0,255,0],[0,0,255],[17,213,92]])assert.deepEqual(color.rgb(...color.hsv(rgb)),rgb)});
+test('exact user color and readable contrasting ink',()=>{assert.equal(color.hex([0,16,255]),'#0010FF');assert.equal(color.ink([0,0,0]),'#FFFFFF');assert.equal(color.ink([255,255,255]),'#000000');assert.equal(color.ink([196,245,129]),'#000000');assert.notEqual(color.readable([0,0,0]),'#000000')});

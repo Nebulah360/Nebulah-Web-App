@@ -1,5 +1,5 @@
 """Local-only Nebulah Link bridge. Python 3.10+, Windows Neighborhood/XDevkit."""
-import argparse, hashlib, hmac, ipaddress, json, os, re, secrets, struct, subprocess, tempfile, time
+import argparse, math, hashlib, hmac, ipaddress, json, os, re, secrets, struct, subprocess, tempfile, time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
@@ -45,6 +45,22 @@ def safe_path(path, drives):
         raise ValueError('Storage root has not been discovered on this console.')
     return path
 
+def sanitize_telemetry(s):
+    """Field-by-field projection; never forward raw plugin/COM objects."""
+    raw=s.get('temperatures')
+    if not isinstance(raw,dict):raw={}
+    temperatures={}
+    for key in ('cpu','gpu','edram','motherboard'):
+        v=raw.get(key)
+        temperatures[key]=v if type(v) in (int,float) and math.isfinite(v) and 0<v<=125 else None
+    title=s.get('current_title')
+    if not isinstance(title,dict):title={}
+    executable=title.get('executable')
+    if not isinstance(executable,str) or len(executable)>512 or re.search(r'[\x00-\x1f]',executable):executable=None
+    title_id=title.get('title_id')
+    if not isinstance(title_id,str) or not re.fullmatch(r'[0-9A-Fa-f]{8}',title_id):title_id=None
+    return {'temperatures':temperatures,'current_title':{'executable':executable or None,'title_id':title_id.upper() if title_id else None}}
+
 class Bridge:
     def __init__(self, powershell):
         self.powershell=powershell; self.target=None; self.drives=[]; self.tickets={}
@@ -59,7 +75,7 @@ class Bridge:
         s=self.adapter('status')
         self.drives=[d for d in s.get('drives',[]) if isinstance(d,str) and re.fullmatch(r'[A-Za-z0-9_]+:\\',d)]
         # Only explicit status fields leave the bridge. No raw adapter payloads.
-        return {'type':str(s.get('type','Unavailable'))[:64], 'kernel':str(s.get('kernel','Unavailable'))[:64], 'drives':self.drives}
+        return {'type':str(s.get('type','Unavailable'))[:64], 'kernel':str(s.get('kernel','Unavailable'))[:64], 'drives':self.drives, **sanitize_telemetry(s)}
     def inspect(self,path):
         if not path.lower().endswith('.xex'):raise ValueError('Only XEX files may be inspected.')
         with tempfile.TemporaryDirectory(prefix='nebulah-') as folder:
@@ -108,7 +124,7 @@ class Handler(BaseHTTPRequestHandler):
     def host_ok(self):return self.headers.get('Host') in self.server.allowed_hosts
     def do_GET(self):
         if not self.host_ok():return self.reply(403,{'error':'Host not allowed.'})
-        files={'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript'),'/style.css':('style.css','text/css')}
+        files={'/':('index.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript'),'/theme.js':('theme.js','text/javascript'),'/style.css':('style.css','text/css')}
         if self.path not in files:return self.reply(404,{'error':'Not found.'})
         name,kind=files[self.path];self.reply(200,(ROOT/'dist'/name).read_bytes(),kind)
     def do_POST(self):

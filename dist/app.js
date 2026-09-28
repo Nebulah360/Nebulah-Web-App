@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id);let demo=false,token='',connected=false,selected=null,busy=false;let sessionActive=false,lastUpdated=0;
 const titles={overview:['Console overview','A clear view of your console, close to home.'],library:['Applications','Discover what’s on your console. Launch with confidence.'],plugins:['Plugin adapters','A dedicated home for console-side extensions.'],activity:['Session activity','A record of this session’s connection and launch actions.']};
 function notice(t){$('notice').textContent=t}function log(t){if($('events').firstElementChild?.textContent==='No actions yet.')$('events').replaceChildren();let li=document.createElement('li'),time=document.createElement('time');time.textContent=new Date().toLocaleTimeString();li.append(time,document.createTextNode(t));$('events').prepend(li)}
-function view(v){document.querySelectorAll('.view').forEach(e=>e.hidden=e.id!==v);document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('active',e.dataset.view===v));$('crumb').textContent=v==='library'?'Applications':v[0].toUpperCase()+v.slice(1);$('page-title').replaceChildren(document.createTextNode(titles[v][0]),Object.assign(document.createElement('span'),{textContent:'.'}));$('page-description').textContent=titles[v][1]}
+function view(v){hideCpuKey();document.querySelectorAll('.view').forEach(e=>e.hidden=e.id!==v);document.querySelectorAll('nav button').forEach(e=>e.classList.toggle('active',e.dataset.view===v));$('crumb').textContent=v==='library'?'Applications':v[0].toUpperCase()+v.slice(1);$('page-title').replaceChildren(document.createTextNode(titles[v][0]),Object.assign(document.createElement('span'),{textContent:'.'}));$('page-description').textContent=titles[v][1]}
 for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>view(b.dataset.view);for(const b of document.querySelectorAll('[data-goto]'))b.onclick=()=>view(b.dataset.goto);
 for(const b of document.querySelectorAll('.close'))b.onclick=()=>b.closest('dialog').close();
 async function api(action,data={}){const r=await fetch('/api/'+action,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(data),signal:AbortSignal.timeout(45000)});let j;try{j=await r.json()}catch{throw Error('Open the app using the URL printed by your local bridge.')}if(!r.ok)throw Error(j.error||'The bridge could not complete this action.');return j}
@@ -23,10 +23,10 @@ async function refreshStatus(){try{status(await api('status'))}catch(e){connecte
 setInterval(updateAge,1000);
 setInterval(()=>{if(sessionActive&&!demo&&!busy&&!document.hidden&&!document.querySelector('dialog[open]'))task(refreshStatus)},10000);
 
-function connectDialog(){$('hosted-help').hidden=location.hostname==='127.0.0.1'||location.hostname==='localhost'||/^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./.test(location.hostname);$('connection-dialog').showModal()}
+function connectDialog(){hideCpuKey();$('hosted-help').hidden=location.hostname==='127.0.0.1'||location.hostname==='localhost'||/^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./.test(location.hostname);$('connection-dialog').showModal()}
 $('connect').onclick=connectDialog;$('connection-open').onclick=connectDialog;
 $('connection-form').onsubmit=e=>{e.preventDefault();task(async()=>{token=$('token').value.trim();demo=false;connected=false;sessionActive=false;selected=null;clearTelemetry('Connecting');$('connection-label').textContent='Connecting…';$('mode').textContent='CONNECTING';$('metric-status').textContent='Connecting';$('metric-type').textContent='—';$('metric-kernel').textContent='—';$('metric-drives').textContent='—';$('files').replaceChildren();const s=await api('connect',{target:$('target').value.trim()});status(s);$('connection-dialog').close();notice('Connected. Choose a discovered storage root to browse applications.');log('Neighborhood connection established.');$('token').value='';})};
-$('demo').onclick=()=>{if(busy)return;demo=true;token='';selected=null;status({temperatures:{cpu:58,gpu:61,edram:55,motherboard:36},current_title:{name:'Nebulah Dash (sample)',executable:'DemoUSB:\\Nebulah\\default.xex',title_id:'00000000'},type:'Retail (sample)',kernel:'2.0.17559.0',drives:['DemoDisk:\\','DemoUSB:\\']});notice('Demo mode — sample data, no connection to a real console.');log('Demo mode enabled.');};
+$('demo').onclick=()=>{if(busy)return;hideCpuKey();demo=true;token='';selected=null;status({temperatures:{cpu:58,gpu:61,edram:55,motherboard:36},current_title:{name:'Nebulah Dash (sample)',executable:'DemoUSB:\\Nebulah\\default.xex',title_id:'00000000'},type:'Retail (sample)',kernel:'2.0.17559.0',drives:['DemoDisk:\\','DemoUSB:\\']});notice('Demo mode — sample data, no connection to a real console.');log('Demo mode enabled.');};
 $('drive').onchange=()=>{$('path').value=$('drive').value;task(browse)};
 const samples=[{name:'Games',directory:true},{name:'Homebrew',directory:true},{name:'Plugins',directory:true},{name:'Nebulah',directory:true}];
 function demoFiles(path){if(/^[^\\]+\\$/.test(path))return samples;if(/Games/i.test(path))return [{name:'default.xex',size:12582912}];if(/Plugins/i.test(path))return [{name:'sample-plugin.xex',size:524288}];return [{name:'default.xex',size:2097152},{name:'readme.txt',size:2048}]}
@@ -35,3 +35,34 @@ $('browse').onclick=()=>task(browse);$('up').onclick=()=>task(async()=>{const p=
 async function inspect(path){selected=null;$('launch').disabled=true;$('launch-path').textContent=path;$('validation').textContent='Reading and checking XEX…';$('launch-dialog').showModal();try{const v=demo?{valid:true,plugin:/Plugins/i.test(path),hash:'Demo only — no file was read',ticket:'demo',checks:['XEX2 header (sample)','Header bounds (sample)','Application module (sample)']}:await api('validate',{path});selected={...v,path};$('validation').replaceChildren();for(const text of [...v.checks,'SHA-256: '+v.hash,v.plugin?'Plugin module: runtime loader required.':'Application candidate. Structural checks passed.']){const d=document.createElement('div');d.className='validation-row mono';d.textContent=text;$('validation').append(d)}$('launch').disabled=!v.valid||v.plugin;$('launch').textContent=demo?'Simulate launch →':'Launch application →';log(demo?'Demo XEX inspection completed.':'XEX structural inspection completed.')}catch(e){$('validation').textContent=e.message;throw e}}
 $('launch').onclick=()=>task(async()=>{if(!selected||!selected.valid||selected.plugin)return;$('launch').disabled=true;if(!demo){await api('launch',{ticket:selected.ticket});clearTelemetry('Launching');connected=false;}$('launch-dialog').close();notice(demo?'Simulated launch complete. Nothing was sent to a console.':'Launch command accepted. The console may disconnect while the title starts.');log(demo?'Launch simulated.':'Launch command accepted.');selected=null});
 $('refresh').onclick=()=>task(async()=>{if(!sessionActive)throw Error('Connect your console first.');if(!demo)await refreshStatus();notice(demo?'Demo data refreshed.':'Console status refreshed.');});$('clear').onclick=()=>{$('events').replaceChildren();log('Activity cleared.');};
+
+// CPU keys are only read following fresh explicit consent. Never log the response.
+let privateTicket=null,privateGeneration=0,privateTimer=null;
+function clearCpuKey(){privateGeneration++;privateTicket=null;clearTimeout(privateTimer);$('cpu-key-value').textContent='';$('cpu-key-result').hidden=true;$('cpu-key-consent').hidden=false;$('cpu-key-confirm').disabled=false;$('cpu-key-message').textContent='';$('cpu-key-cancel').textContent='Cancel';}
+function hideCpuKey(){clearCpuKey();if($('cpu-key-dialog').open)$('cpu-key-dialog').close();}
+$('cpu-key-dialog').addEventListener('close',clearCpuKey);
+$('cpu-key-cancel').onclick=hideCpuKey;
+document.addEventListener('visibilitychange',()=>{if(document.hidden)hideCpuKey()});
+window.addEventListener('pagehide',hideCpuKey);
+$('cpu-key-open').onclick=()=>task(async()=>{
+  if(demo||!connected)throw Error('Connect a real console before requesting private information.');
+  clearCpuKey();const generation=privateGeneration;
+  const consent=await api('cpu-key/prepare'); // No private console read.
+  if(generation!==privateGeneration||document.hidden)return;
+  privateTicket=consent.confirmation_ticket;$('cpu-key-dialog').showModal();
+  privateTimer=setTimeout(()=>{privateTicket=null;$('cpu-key-confirm').disabled=true;$('cpu-key-message').textContent='Confirmation expired. Close and request again.';},60000);
+});
+$('cpu-key-confirm').onclick=async()=>{
+  if(busy||!privateTicket||demo||!connected)return;
+  const ticket=privateTicket,generation=privateGeneration;privateTicket=null;clearTimeout(privateTimer);busy=true;
+  $('cpu-key-confirm').disabled=true;$('cpu-key-message').textContent='Reading CPU key…';
+  try{
+    const result=await api('cpu-key/reveal',{confirmed:true,confirmation_ticket:ticket});
+    if(generation!==privateGeneration||document.hidden||!$('cpu-key-dialog').open)return;
+    if(!/^[0-9A-F]{32}$/.test(result.cpu_key||''))throw Error('Invalid response');
+    $('cpu-key-value').textContent=result.cpu_key;$('cpu-key-consent').hidden=true;$('cpu-key-result').hidden=false;$('cpu-key-message').textContent='';$('cpu-key-cancel').textContent='Hide and close';
+    privateTimer=setTimeout(hideCpuKey,60000);
+  }catch{
+    if(generation===privateGeneration)$('cpu-key-message').textContent='CPU key could not be read. Check compatible JRPC support, then close and confirm again.';
+  }finally{busy=false;}
+};

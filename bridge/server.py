@@ -63,7 +63,7 @@ def sanitize_telemetry(s):
 
 class Bridge:
     def __init__(self, powershell):
-        self.powershell=powershell; self.target=None; self.drives=[]; self.tickets={}
+        self.powershell=powershell; self.target=None; self.drives=[]; self.tickets={}; self.private_tickets={}
     def adapter(self, action, **kwargs):
         p=subprocess.run([self.powershell,'-NoProfile','-NonInteractive','-File',str(ROOT/'bridge/neighborhood.ps1')],
              input=json.dumps({'action':action,'target':self.target or '',**kwargs}),text=True,capture_output=True,timeout=40)
@@ -86,10 +86,30 @@ class Bridge:
         if action=='connect':
             target=data.get('target','')
             if not isinstance(target,str) or not re.fullmatch(r'[A-Za-z0-9_.-]{0,253}',target):raise ValueError('Invalid console name or local IP.')
-            self.target=target; self.drives=[]; self.tickets={}
+            self.target=target; self.drives=[]; self.tickets={}; self.private_tickets={}
             return self.status()
         if self.target is None:raise ValueError('Connect a console first.')
         if action=='status':return self.status()
+        if action=='cpu-key/prepare':
+            # Preparing consent never queries the console or reads private data.
+            now=time.monotonic()
+            self.private_tickets={k:v for k,v in self.private_tickets.items() if v>now}
+            if len(self.private_tickets)>=32:raise ValueError('Too many pending confirmations.')
+            ticket=secrets.token_urlsafe(32)
+            self.private_tickets[ticket]=now+60
+            return {'confirmation_ticket':ticket,'expires_in':60}
+        if action=='cpu-key/reveal':
+            if data.get('confirmed') is not True:raise ValueError('Explicit confirmation required.')
+            ticket=data.get('confirmation_ticket')
+            if not isinstance(ticket,str):raise ValueError('Confirmation ticket required.')
+            expires=self.private_tickets.pop(ticket,None)
+            if expires is None or expires<time.monotonic():raise ValueError('Confirmation expired.')
+            result=self.adapter('cpu-key')
+            key=result.get('cpu_key')
+            if not isinstance(key,str) or not re.fullmatch(r'[0-9A-Fa-f]{32}',key) or key=='0'*32:
+                raise ValueError('CPU key unavailable.')
+            return {'cpu_key':key.upper()}
+
         if action=='browse':
             path=safe_path(data.get('path'),self.drives)
             files=self.adapter('browse',path=path).get('files',[])

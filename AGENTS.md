@@ -11,3 +11,5 @@
 - Run `python -m unittest discover -s tests -v` and `node --check dist/app.js` when changing the corresponding behavior.
 - Use the hardware smoke-test checklist in README before calling a release stable.
 - This is the development repository specified by the user. Stable promotion is separate; never push this work into Dash's stable repo automatically.
+
+- The user explicitly authorized optional CPU-key display. Preserve fresh confirmation before each read, short-lived single-use consent, no status/log/storage inclusion, and automatic UI hiding. This does not authorize other private-information features.

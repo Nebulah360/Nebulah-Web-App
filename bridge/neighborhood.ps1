@@ -41,6 +41,17 @@ try {
       } catch { }
       @{ type=$kind; kernel=$kernel; drives=$drives; temperatures=$temperatures; current_title=@{executable=$executable; title_id=$titleId} } | ConvertTo-Json -Depth 4 -Compress
     }
+    'cpu-key' {
+      # Only invoked by the bridge after explicit, single-use consent.
+      $console.ConnectTimeout = 2000
+      $console.ConversationTimeout = 2000
+      $connection = $console.OpenConnection('')
+      $response = ''
+      $console.SendTextCommand($connection, 'consolefeatures ver=2 type=10 params="A\0\A\0\"', [ref]$response)
+      if ($response -notmatch '^200[- ]+\s*([0-9a-fA-F]{32})\s*$') { throw 'CPU key unavailable' }
+      @{ cpu_key=$Matches[1].ToUpperInvariant() } | ConvertTo-Json -Compress
+      $response = $null
+    }
     'browse' {
       $items = @($console.DirectoryFiles([string]$request.path) | ForEach-Object {
         @{ name=[string]$_.Name; directory=[bool]$_.IsDirectory; size=[long]$_.Size }

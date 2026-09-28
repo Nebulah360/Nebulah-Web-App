@@ -61,4 +61,35 @@ class Telemetry(unittest.TestCase):
         b=Bridge('unused');b.adapter=lambda action:{'type':'Retail','kernel':'Unavailable','drives':['Usb9:\\'],'temperatures':{'cpu':50},'serial':'secret'}
         s=b.status();self.assertEqual(s['temperatures']['cpu'],50);self.assertNotIn('serial',s)
 
+class PrivateConsent(unittest.TestCase):
+    def make_bridge(self):
+        b=Fake();b.calls=[]
+        def adapter(action,**kwargs):
+            b.calls.append(action)
+            return {'cpu_key':'1234567890abcdef1234567890abcdef','drives':[]}
+        b.adapter=adapter
+        return b
+    def test_prepare_and_missing_consent_never_read(self):
+        b=self.make_bridge();v=b.dispatch('cpu-key/prepare',{})
+        for payload in ({},{'confirmed':False},{'confirmed':'true'},{'confirmed':True}):
+            with self.assertRaises(ValueError):b.dispatch('cpu-key/reveal',payload)
+        self.assertEqual(b.calls,[])
+        self.assertIn('confirmation_ticket',v)
+    def test_confirm_reads_once_and_replay_fails(self):
+        b=self.make_bridge();v=b.dispatch('cpu-key/prepare',{});payload={**v,'confirmed':True}
+        self.assertEqual(len(b.dispatch('cpu-key/reveal',payload)['cpu_key']),32)
+        with self.assertRaises(ValueError):b.dispatch('cpu-key/reveal',payload)
+        self.assertEqual(b.calls,['cpu-key'])
+    def test_expiry_and_reconnect_invalidate(self):
+        b=self.make_bridge();v=b.dispatch('cpu-key/prepare',{});b.private_tickets[v['confirmation_ticket']]=0
+        with self.assertRaises(ValueError):b.dispatch('cpu-key/reveal',{**v,'confirmed':True})
+        v=b.dispatch('cpu-key/prepare',{});b.dispatch('connect',{'target':'other'})
+        with self.assertRaises(ValueError):b.dispatch('cpu-key/reveal',{**v,'confirmed':True})
+        self.assertNotIn('cpu-key',b.calls)
+    def test_status_never_returns_key(self):
+        b=self.make_bridge();self.assertNotIn('cpu_key',b.status());self.assertEqual(b.calls,['status'])
+    def test_invalid_key_fails_closed(self):
+        b=self.make_bridge();b.adapter=lambda action:{'cpu_key':'not a key'};v=b.dispatch('cpu-key/prepare',{})
+        with self.assertRaises(ValueError):b.dispatch('cpu-key/reveal',{**v,'confirmed':True})
+
 if __name__=='__main__':unittest.main()

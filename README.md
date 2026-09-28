@@ -37,7 +37,7 @@ LAN mode uses HTTP: pairing and traffic are not encrypted. Use only trusted priv
 - Games and homebrew use their console-provided paths; storage roots are discovered via Neighborhood.
 - Explicit demo mode with sample data; demo launch never sends a console command.
 - Core status allowlist: console type, kernel, storage roots, supported temperatures, running executable and title ID. Unknown properties display unavailable.
-- In-memory session activity; no persistent telemetry, console secrets, serials, account IDs, CPU/DVD keys, or keyvault endpoints.
+- In-memory session activity; no persistent telemetry, console secrets, serials, account IDs, DVD keys, or keyvault endpoints. CPU-key access is a separate confirmed operation.
 - Pairing token, same-origin requests, Host validation, request bounds, fixed adapter operations, and path validation.
 - XEX2 structural checks, SHA-256 file identity, short-lived single-use launch tickets, re-read before launch, and DLL/plugin launch rejection.
 
@@ -51,7 +51,7 @@ The overview includes CPU, GPU, eDRAM and motherboard temperatures, running exec
 
 Temperature readings and title ID use **optional read-only JRPC v2 `consolefeatures`** commands through Neighborhood. A compatible console plugin must already be installed; this app does not install or load it. Unsupported sensors are unavailable, never zero or invented. The running executable uses Neighborhood's `RunningProcessInfo.ProgramName`; friendly game-name lookup is not implemented. Demo readings are explicitly labeled samples. The four accepted sensor values are finite numbers above 0 and no higher than 125 °C; outside-range responses display unavailable rather than a false reading.
 
-The new COM telemetry path requires Windows/console verification; automated tests cover response projection and invalid readings, not hardware compatibility. Protocol reference: [JRPC client](https://github.com/XboxChef/JRPC/blob/master/JRPC_Client/JRPC.cs), fixed read operations 15 (temperatures) and 16 (title ID). No private-info commands are issued.
+The new COM telemetry path requires Windows/console verification; automated tests cover response projection and invalid readings, not hardware compatibility. Protocol reference: [JRPC client](https://github.com/XboxChef/JRPC/blob/master/JRPC_Client/JRPC.cs), fixed read operations 15 (temperatures) and 16 (title ID). Normal status polling issues no private-info commands.
 
 ## Plugin and RTE boundary
 
@@ -92,3 +92,9 @@ Node is only needed for the JavaScript syntax check, not to run the app. No npm 
 Do not promote to the stable public release channel until this checklist passes. This repository is the user-designated development repository; do not mirror testing commits into Nebulah Dash's stable repository.
 
 Protocol/architecture references: [XboxChef/XDCKIT](https://github.com/XboxChef/XDCKIT) and [Experiment5X/XBDM](https://github.com/Experiment5X/XBDM). These are reference implementations, not vendored dependencies. COM member compatibility remains a hardware validation item.
+
+## Optional CPU-key display
+
+On Overview, choose **Reveal CPU key…**, then **Confirm — read and display CPU key**. Opening the prompt does not read the key. Canceling sends no key-read command. The bridge requires a fresh 60-second single-use confirmation ticket and `confirmed: true` before invoking JRPC v2 type 10. Reconnecting invalidates pending confirmations. This requires compatible JRPC support and remains subject to hardware testing.
+
+The key is shown only in the dedicated dialog. It is cleared after 60 seconds, on dialog close, tab hiding, navigation or connection changes. A late response after dismissal is discarded. It is never included in status polling, activity logs, localStorage, exports or automatic clipboard operations. Responses use `Cache-Control: no-store`; the bridge does not persist keys. This is transient handling, not a guarantee of secure erasure from process/browser memory. LAN HTTP remains unencrypted, which is stated in the confirmation prompt.

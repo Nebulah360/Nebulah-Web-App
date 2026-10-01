@@ -31,3 +31,16 @@ Both routes use the same pairing-token and same-origin protections as other API 
 Authenticated `registry/list` returns `builds` plus the catalog content revision. `registry/check` takes `sha256`, integer `size`, and optional `build_id`; returns status, actual digest/size, expected record, matches, discrepancies and catalog revision. This is a caller-supplied digest lookup, not a server byte check, and always returns `eligible_for_install: false`. Neither route needs a console connection.
 
 `validate` accepts optional `build_id` and now returns `size` and `verification` measured from actual console-file bytes. Revoked/mismatched/unknown-selected builds and registry errors get no launch ticket. Launch reloads the catalog to honor revocations and compares the bytes again. Unknown/unreviewed local applications retain manual structural launch behavior; they are not labeled reviewed. The CLI `tools/xex_registry.py verify FILE --build ID` provides the stricter actual-file, reviewed-only preinstall gate. See `registry/README.md` for status semantics and trust limitations.
+
+## Repositories and plugin inventory
+
+All routes retain pairing-token and same-origin checks. No console is required for repository management.
+
+- `repos/list {}` → preset/saved repositories and last-success snapshots.
+- `repos/save {repository}` / `repos/remove {repository}` → save a canonical `owner/repo` or HTTPS GitHub URL, or remove a user-saved entry. Presets remain tracked.
+- `repos/check {repository}` → metadata/revision for one saved repository, `first-check`, `changed`, `unchanged` or `unavailable`; `push_changed` is separate from default-branch `revision_changed`. On failure `last_success` is historical, not current. Partial release failures are `release_status: unavailable`.
+- `plugins/list {}` → console observation state/items, loaded bundled backend components, and user metadata registrations.
+- `plugins/register {name, version, repository}` → save metadata only, `loaded: false`; automatically track its repository.
+- `plugins/remove {name}` → remove metadata registration only.
+
+Limits: 50 repository subscriptions and 100 plugin registrations. Storage is host-local SQLite. API checks do not accept arbitrary URLs/hosts or fetch executable artifacts. A revision change is independent of reviewed-build hash verification and does not approve installation.

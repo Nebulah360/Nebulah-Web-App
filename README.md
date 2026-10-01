@@ -102,3 +102,37 @@ The key is shown only in the dedicated dialog. It is cleared after 60 seconds, o
 ## Reviewed-build verification
 
 XEX inspection now reports registry identity separately from structural validity. Select an expected project build to see discrepancies; revoked or mismatched builds cannot launch. The catalog starts empty, so no existing binary is falsely labeled reviewed. Maintainers can propose actual-file hashes with `tools/xex_registry.py propose`, record review/hardware evidence, and revoke entries. `tools/xex_registry.py verify FILE --build ID` checks staged downloads and exits nonzero unless the selected reviewed build matches exactly. Repository installation automation is not yet implemented. See [registry documentation](registry/README.md) for the workflow and limitations.
+
+## Repository update checks and plugin inventory
+
+Check all preset and user-saved repositories:
+
+```powershell
+py -3 tools/nebulah.py check-updates
+py -3 tools/nebulah.py save-repo owner/project
+py -3 tools/nebulah.py repos
+py -3 tools/nebulah.py remove-repo owner/project
+```
+
+The presets are `Nebulah360/Nebulah-Web-App` and `Nebulah360/Nebulah-Dash`. The web **Repositories** page offers the same save/remove/check controls. It can pair with the local bridge without connecting a console. Results include owner, stars, last repository push, metadata modification time, default branch, full commit revision, commit date, latest stable release/tag/date, license, forks, issues, archived state and description. First check establishes a baseline; subsequent checks show default-branch revision changes and whether the repository push timestamp changed. This is not a comparison against an installed binary, and a changed SHA can be a rewrite/rollback, not necessarily a newer release.
+
+Only public GitHub REST metadata is currently supported. Private/inaccessible repositories, API limits and network errors are reported as unavailable; previous successful results are explicitly historical. The CLI exits 2 if any repository check is unavailable. Latest release lookup can fail independently of the commit check. No downloads, installs, XEX execution, or registry trust changes occur. Repository owner/stars are informational, not proof of safety.
+
+Local repository subscriptions, last-success snapshots and plugin registrations are stored in `.local/repositories.sqlite3` (excluded from Git). No console secrets or pairing tokens are stored there. The web UI checks one repo at a time; CLI uses up to four workers. API redirects are disabled; only fixed `api.github.com/repos/…` paths are requested. A saved plugin's repository is automatically tracked.
+
+```powershell
+py -3 tools/nebulah.py register-plugin "My plugin" --version "1.0" --repo owner/plugin
+py -3 tools/nebulah.py plugins
+py -3 tools/nebulah.py remove-plugin "My plugin"
+# For live backend/console inventory, set NEBULAH_BRIDGE_TOKEN to the token
+# printed by your bridge, then use its exact local URL:
+py -3 tools/nebulah.py plugins --bridge http://127.0.0.1:8765
+```
+
+The web **Plugins** view separates:
+
+- **Console:** module names observed through Neighborhood's `DebugTarget.Modules`. This can include titles/system modules, so plugin classification is explicitly unverified. It is not a complete DashLaunch-slot inventory. Unreachable/unsupported consoles show unavailable. Hardware validation is still required.
+- **Backend:** bundled Python components actually imported by the running bridge. These are labeled components, not third-party plugins; upstream repository revision is not claimed as their installed revision.
+- **User:** names, declared versions and repositories registered by the user. These are labeled **registered-not-loaded** because this app does not yet have a user-code plugin loader. No arbitrary plugin code is executed.
+
+Use Check updates to fill in owner/stars/revision/date metadata for linked repositories. Console module-to-repository mapping is not guessed from filenames. Registrations can be removed without deleting files or unloading console modules.

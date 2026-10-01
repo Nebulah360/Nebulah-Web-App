@@ -52,6 +52,11 @@ try {
       @{ cpu_key=$Matches[1].ToUpperInvariant() } | ConvertTo-Json -Compress
       $response = $null
     }
+    'plugins' {
+      # Module observation only; do not infer DLL/plugin identity from a name.
+      $modules = @($console.DebugTarget.Modules | ForEach-Object { @{ name=[string]$_.Name } })
+      @{ modules=$modules } | ConvertTo-Json -Depth 4 -Compress
+    }
     'browse' {
       $items = @($console.DirectoryFiles([string]$request.path) | ForEach-Object {
         @{ name=[string]$_.Name; directory=[bool]$_.IsDirectory; size=[long]$_.Size }

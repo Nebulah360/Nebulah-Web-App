@@ -1,7 +1,8 @@
 """Local-only Nebulah Link bridge. Python 3.10+, Windows Neighborhood/XDevkit."""
-import argparse, math, hashlib, hmac, ipaddress, json, os, re, secrets, struct, subprocess, tempfile, time
+import argparse, sys, math, hashlib, hmac, ipaddress, json, os, re, secrets, struct, subprocess, tempfile, time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from repositories import Repositories
 from hash_registry import load_catalog, public_build, verify_digest, RegistryError
 ROOT = Path(__file__).resolve().parents[1]
 MAX_XEX = 64 * 1024 * 1024
@@ -84,6 +85,25 @@ class Bridge:
             if dest.stat().st_size>MAX_XEX:raise ValueError('XEX exceeds inspection size limit.')
             return validate_xex(dest.read_bytes())
     def dispatch(self,action,data):
+        if action.startswith('repos/') or action.startswith('plugins/'):
+            store=Repositories()
+            if action=='repos/list':return {'repositories':store.list()}
+            if action=='repos/save':return store.save(data.get('repository'))
+            if action=='repos/remove':return store.remove(data.get('repository'))
+            if action=='repos/check':return store.check(data.get('repository'))
+            if action=='plugins/register':return store.register_plugin(data.get('name'),data.get('version'),data.get('repository'))
+            if action=='plugins/remove':return store.remove_plugin(data.get('name'))
+            if action=='plugins/list':
+                console={'state':'disconnected','items':[]}
+                if self.target is not None:
+                    try:
+                        raw=self.adapter('plugins')
+                        console={'state':'observed','items':[{'name':m['name'],'state':'loaded-module','plugin_classification':'unverified'} for m in raw.get('modules',[]) if isinstance(m,dict) and isinstance(m.get('name'),str) and 0<len(m['name'])<=260 and not re.search(r'[\x00-\x1f]',m['name'])][:512]}
+                    except Exception:console={'state':'unavailable','items':[]}
+                backend=[{'name':n,'state':'loaded-bundled-component','repository':'Nebulah360/Nebulah-Web-App'} for n in ('hash_registry','repositories') if n in sys.modules]
+                return {'console':console,'backend':backend,'user':store.user_plugins(),'note':'Observed console modules may include titles and system modules. No user-code loader is implemented.'}
+            raise ValueError('Unknown inventory operation.')
+
         if action=='registry/list':
             catalog,revision=load_catalog()
             return {'builds':[public_build(b) for b in catalog['builds']],'catalog_revision':revision}

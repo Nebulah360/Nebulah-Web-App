@@ -4,6 +4,12 @@ Development foundation for [Nebulah Web App](https://github.com/Nebulah360/Nebul
 
 **Status: v0.1 development foundation, not a console-verified stable release.** Python validation and API tests run without hardware. The Windows XDevkit COM adapter must be smoke-tested against the user's installed Neighborhood version before relying on live launch operations. No proprietary SDK files are bundled.
 
+## Preview
+
+![Nebulah Link console dashboard in demo mode](docs/images/dashboard-preview.png)
+
+*Dashboard preview with sample console data.*
+
 ## Start on Windows
 
 1. Install Python 3.10 or newer and your existing Xbox 360 Neighborhood installation. Confirm Neighborhood can browse the console first.

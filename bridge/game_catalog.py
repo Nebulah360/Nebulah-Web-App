@@ -14,13 +14,18 @@ def load_games(path=None):
     if len(raw) > 8 * 1024 * 1024:
         raise ValueError('Game catalog exceeds size limit.')
     catalog = json.loads(raw)
-    if catalog.get('schema_version') != 1 or not isinstance(catalog.get('builds'), list):
+    return validate_game_builds(catalog), hashlib.sha256(raw).hexdigest()
+
+
+def validate_game_builds(catalog):
+    """Validate an in-memory catalog too, so proposals use the same contract."""
+    if not isinstance(catalog, dict) or catalog.get('schema_version') != 1 or not isinstance(catalog.get('builds'), list):
         raise ValueError('Invalid game catalog.')
     seen = set()
     for b in catalog['builds']:
         if not isinstance(b, dict):raise ValueError('Invalid game build.')
         for k in ('id', 'title', 'filename', 'provenance'):
-            if not isinstance(b.get(k), str) or not 0 < len(b[k]) <= 1024 or re.search(r'[\x00-\x1f]', b[k]):
+            if not isinstance(b.get(k), str) or not b[k].strip() or len(b[k]) > 1024 or re.search(r'[\x00-\x1f\x7f]', b[k]):
                 raise ValueError('Invalid game metadata.')
         if not re.fullmatch(r'[a-z0-9][a-z0-9._-]{0,127}', b['id']) or b['id'] in seen:raise ValueError('Invalid or duplicate game build ID.')
         seen.add(b['id'])
@@ -32,7 +37,7 @@ def load_games(path=None):
         if b.get('state') not in ('candidate', 'reviewed', 'revoked'):raise ValueError('Invalid review state.')
         if b['state'] == 'reviewed':
             review = b.get('review', {})
-            if b.get('unmodified') is not True or any(not isinstance(review.get(k),str) or not review[k].strip() for k in ('reviewer','date','evidence','hardware_test')):
+            if b.get('unmodified') is not True or not isinstance(review, dict) or any(not isinstance(review.get(k),str) or not review[k].strip() for k in ('reviewer','date','evidence','hardware_test')):
                 raise ValueError('Reviewed baselines require unmodified provenance and review evidence.')
             if not re.fullmatch(r'\d{4}-\d{2}-\d{2}',review['date']):raise ValueError('Invalid review date.')
         if b['state'] == 'revoked' and not b.get('revocation_reason'):raise ValueError('Revocation needs a reason.')
@@ -41,7 +46,28 @@ def load_games(path=None):
             if not isinstance(cover,str) or not re.fullmatch(r'data:image/(png|jpeg);base64,[A-Za-z0-9+/=]+',cover):raise ValueError('Use embedded PNG/JPEG artwork.')
             data=base64.b64decode(cover.split(',',1)[1],validate=True)
             if len(data)>512*1024 or not (data.startswith(b'\x89PNG\r\n\x1a\n') or data.startswith(b'\xff\xd8\xff')):raise ValueError('Invalid artwork.')
-    return catalog['builds'], hashlib.sha256(raw).hexdigest()
+    return catalog['builds']
+
+
+def candidate_from_inspection(v, filename, title, provenance, build_id=None):
+    """Export measured identity only; a hash never grants review or trust."""
+    if not isinstance(v, dict) or v.get('valid') is not True or v.get('plugin') is not False:
+        raise ValueError('Inspect a non-plugin XEX before proposing a game baseline.')
+    metadata = v.get('metadata')
+    if not isinstance(metadata, dict):
+        raise ValueError('Game execution metadata is required.')
+    candidate = {k:metadata.get(k) for k in ('title_id', 'media_id', 'version', 'base_version')}
+    candidate.update(id='candidate', filename=filename, title=title, provenance=provenance,
+                     sha256=v.get('hash'), size=v.get('size'), state='candidate', unmodified=False)
+    # Validate before normalizing or deriving an ID; never invent missing fields.
+    validate_game_builds({'schema_version':1, 'builds':[candidate]})
+    candidate['title'] = title.strip()
+    candidate['provenance'] = provenance.strip()
+    identity = [filename.lower(), *[candidate[k] for k in ('title_id', 'media_id', 'version', 'base_version', 'sha256', 'size')]]
+    digest = hashlib.sha256(json.dumps(identity, separators=(',', ':')).encode()).hexdigest()
+    candidate['id'] = build_id if build_id is not None else 'game-' + candidate['title_id'].lower() + '-' + digest[:32]
+    validate_game_builds({'schema_version':1, 'builds':[candidate]})
+    return candidate
 
 
 def verify_game(v, filename, path=None):

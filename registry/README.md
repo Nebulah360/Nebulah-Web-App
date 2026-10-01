@@ -48,14 +48,18 @@ Ordinary user-requested console launches may still launch structurally valid unk
 
 `games.json` is separate from the source-build catalog. Retail game files do not require a GitHub source repository. No executable, proprietary game data, fabricated checksum, or approved retail reference is shipped.
 
-Measure your own reference file:
+To propose the currently inspected console XEX, open **Game preview**, read the file, then enter its **Game title** and **Provenance** under **Propose a baseline**. Generate and copy/download the candidate JSON. The bridge uses a short-lived snapshot of its actual-byte inspection; the browser cannot supply replacement measurements or trust fields. Reinspect after changing files or reconnecting. Demo data, plugin modules and files without valid execution metadata are ineligible; a valid file with no catalog reference can still be proposed.
+
+Alternatively, measure your own local reference file with the same candidate generator and schema validation:
 
 ```powershell
 py -3 tools/game_baselines.py propose path\default_mp.xex --id game-release-mp --title "Game title" --provenance "Document the source and edition of this reference" --cover path\cover.jpg
 py -3 tools/game_baselines.py lint
 ```
 
-The proposal prints one candidate entry. Add it to the `builds` array in `registry/games.json`. Optional artwork must be a local PNG/JPEG no larger than 512 KiB and is embedded in the entry; the browser does not contact an artwork service. Only distribute artwork you have permission to include. Metadata/cover presentation is separate from verification.
+Both routes export one candidate entry with filename, Title ID, Media ID, raw version/base version, SHA-256 and size, plus the supplied title/provenance. They always set `state: "candidate"` and `unmodified: false`, and never generate review evidence. False means unmodified provenance is not yet attested, not proof of modification. Exporting does not write the catalog or change verification badges. Submit the entry through normal repository review before adding it to the `builds` array in `registry/games.json`; the exported entry itself is not a whole catalog. To lint a proposed catalog, use `py -3 tools/game_baselines.py lint --catalog path\games.json` with a `{"schema_version": 1, "builds": [...]}` wrapper.
+
+Optional CLI artwork must be a local PNG/JPEG no larger than 512 KiB and is embedded in the entry; the browser does not contact an artwork service. Only distribute artwork you have permission to include. Metadata/cover presentation is separate from verification.
 
 Approval requires an independent review of the reference's unmodified provenance: set `unmodified` to `true`, `state` to `reviewed`, and add a `review` object with nonempty `reviewer`, ISO `date` (`YYYY-MM-DD`), `evidence`, and `hardware_test`. Merely copying these fields is not evidence. Never promote a file just because it runs or matches an untrusted published checksum. Proposals are never automatically approved.
 

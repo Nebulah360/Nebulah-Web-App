@@ -100,4 +100,106 @@ $('game-save').onsubmit=e=>{e.preventDefault();task(async()=>{requireGameConnect
 function gameBadge(result){const badge=document.createElement('span');const status=result.status;badge.className='game-badge '+(status==='verified'?'verified':['mismatch','revoked'].includes(status)?'mismatch':'unknown');badge.textContent=(status==='verified'||['mismatch','revoked'].includes(status)?'✓ ':'? ')+result.label;return badge;}
 function renderGameCapabilities(){const panel=$('game-capabilities');panel.replaceChildren();for(const [name,reason] of [['Trainers','No tested trainer adapter installed.'],['Title updates','Discovery and activation adapter not implemented.'],['GSC injection','Game/version compatibility unknown; no tested adapter installed.']]){const row=document.createElement('div');row.className='capability';const text=document.createElement('div'),heading=document.createElement('b'),note=document.createElement('p'),button=document.createElement('button');heading.textContent=name;note.textContent=reason;button.textContent='Unavailable';button.className='secondary';button.disabled=true;text.append(heading,note);row.append(text,button);panel.append(row);}}
 function showGameMetadata(result,fallback){const report=result.verification,metadata=report.metadata||{},game=report.game;$('game-preview-name').textContent=game?.title||fallback;$('game-preview-source').textContent=demo?'Demo metadata — no console file read':game?.source||'File metadata from console XEX; artwork not available';$('game-cover').replaceChildren();if(game?.cover){const img=document.createElement('img');img.src=game.cover;img.alt=(game.title||fallback)+' cover';img.onerror=()=>{$('game-cover').textContent='Artwork unavailable';};$('game-cover').append(img);}else $('game-cover').textContent='XBOX 360';const container=$('game-metadata');container.replaceChildren();for(const [label,key] of [['Title ID','title_id'],['Media ID','media_id'],['File version (hex)','version'],['Base version (hex)','base_version'],['Disc','disc'],['Disc count','disc_count']])detail(container,label,metadata[key]);}
-async function previewGame(entry){requireGameConnection();$('game-preview-name').textContent=entry.name;$('game-preview-source').textContent='Reading game folder…';$('game-metadata').replaceChildren();$('game-cover').textContent='XBOX 360';$('game-launch-files').replaceChildren();renderGameCapabilities();$('game-preview-dialog').showModal();const files=demo?demoFiles(entry.folder):(await api('browse',{path:entry.folder})).files;const xex=files.filter(f=>!f.directory&&/\.xex$/i.test(f.name));$('game-preview-source').textContent=demo?'Sample folder — no console connection':'Select a file to read metadata and verify its current bytes.';if(!xex.length)$('game-launch-files').textContent='No XEX launch files in this folder. Open a game subfolder and save a shortcut.';for(const file of xex){const row=document.createElement('article');row.className='game-file';const heading=document.createElement('h4'),badge=gameBadge({status:'unknown',label:'Not checked'}),buttons=document.createElement('div'),verify=document.createElement('button'),launch=document.createElement('button'),details=document.createElement('details'),summary=document.createElement('summary'),reportText=document.createElement('pre');heading.textContent=file.name;buttons.className='game-actions';verify.className='secondary';verify.textContent='Read metadata & verify';launch.className='secondary';launch.textContent='Validate & launch';summary.textContent='Verification details';details.append(summary,reportText);details.hidden=true;buttons.append(verify,launch);row.append(heading,badge,buttons,details);$('game-launch-files').append(row);const path=entry.folder+file.name;const check=async()=>{badge.className='game-badge unknown';badge.textContent='Reading file…';details.hidden=true;try{const result=demo?{plugin:false,verification:{status:file.name==='default_mp.xex'?'mismatch':'verified',label:file.name==='default_mp.xex'?'Demo: differs from sample reference':'Demo: matches sample reference',actual_sha256:'Sample only — not a real hash',metadata:{title_id:'00000000',media_id:'00000000',version:'00000000',base_version:'00000000',disc:1,disc_count:1},references:[],game:{title:entry.name+' (sample)',source:'Demo'}}}:await api('games/inspect',{path});const fresh=gameBadge(result.verification);badge.className=fresh.className;badge.textContent=fresh.textContent;showGameMetadata(result,entry.name);const card=Array.from(document.querySelectorAll('.game-card')).find(c=>c.dataset.shortcutId===String(entry.id));if(card&&result.verification.game){card.querySelector('h3').textContent=result.verification.game.title;if(result.verification.game.cover){const image=document.createElement('img');image.src=result.verification.game.cover;image.alt=result.verification.game.title+' cover';card.querySelector('.game-cover').replaceChildren(image);}}reportText.textContent=JSON.stringify({checked_at:new Date().toISOString(),...result.verification,game:undefined},null,2);details.hidden=false;launch.disabled=result.plugin||['mismatch','revoked'].includes(result.verification.status);launch.title=result.plugin?'Plugin modules cannot launch as games.':launch.disabled?'File differs from a reviewed baseline or is revoked.':'';}catch(e){badge.className='game-badge unknown';badge.textContent='? Check unavailable';throw e;}};verify.onclick=()=>task(check);launch.onclick=()=>task(async()=>{requireGameConnection();$('game-preview-dialog').close();await inspect(path);});if(file.name===entry.executable)await check();}}
+// Candidate export is bound to the most recently inspected file in this preview.
+// It never changes badges or sends catalog, trust, or console-write requests.
+let gamePreviewGeneration=0,candidateGeneration=0,candidateInspection=null,candidateExport=null;
+function resetGameCandidate(message='Read a console XEX to prepare a candidate.'){
+  candidateGeneration++;candidateInspection=null;candidateExport=null;
+  $('game-candidate-form').reset();$('game-candidate-form').hidden=true;
+  $('game-candidate-file').textContent='';$('game-candidate-output').hidden=true;
+  $('game-candidate-json').value='';$('game-candidate-help').textContent=message;
+  $('game-candidate-message').textContent='';
+}
+function offerGameCandidate(result){
+  if(demo){resetGameCandidate('Candidate export is unavailable for demo data. Connect and inspect a real console file.');return;}
+  if(!result.inspection_id){resetGameCandidate(result.candidate_unavailable||'Complete XEX execution metadata is required. Read another file.');return;}
+  candidateInspection=result.inspection_id;
+  $('game-candidate-form').hidden=false;
+  $('game-candidate-file').textContent=result.file+' · '+result.verification.actual_size+' bytes · SHA-256 '+result.verification.actual_sha256;
+  $('game-candidate-help').textContent='This export uses the inspected snapshot (valid for 10 minutes). Enter its title and provenance; read the file again if its bytes have changed.';
+}
+$('game-preview-dialog').addEventListener('close',()=>{gamePreviewGeneration++;resetGameCandidate();});
+for(const id of ['game-candidate-title','game-candidate-provenance'])$(id).addEventListener('input',()=>{
+  candidateGeneration++;candidateExport=null;$('game-candidate-output').hidden=true;
+  $('game-candidate-json').value='';$('game-candidate-message').textContent='';
+});
+$('game-candidate-form').onsubmit=e=>{
+  e.preventDefault();task(async()=>{
+    if(demo||!connected||!candidateInspection)throw Error('Inspect a real console file before exporting a candidate.');
+    const title=$('game-candidate-title').value.trim(),provenance=$('game-candidate-provenance').value.trim();
+    if(!title||!provenance){$('game-candidate-message').textContent='Enter both a game title and its provenance.';return;}
+    const generation=candidateGeneration,inspection=candidateInspection;
+    candidateExport=null;$('game-candidate-output').hidden=true;$('game-candidate-json').value='';
+    $('game-candidate-message').textContent='Preparing untrusted candidate…';
+    try{
+      const result=await api('games/propose',{inspection_id:inspection,title,provenance});
+      if(generation!==candidateGeneration||!$('game-preview-dialog').open)return;
+      candidateExport={text:JSON.stringify(result.candidate,null,2)+'\n',filename:result.candidate.id+'.candidate.json'};
+      $('game-candidate-json').value=candidateExport.text;$('game-candidate-output').hidden=false;
+      $('game-candidate-message').textContent='Untrusted candidate ready. The catalog and verification result are unchanged. Submit it for separate review.';
+    }catch(e){
+      if(generation===candidateGeneration&&$('game-preview-dialog').open)$('game-candidate-message').textContent='Could not generate candidate. Check title/provenance and read the file again if the inspection expired. '+e.message;
+    }
+  });
+};
+$('game-candidate-copy').onclick=async()=>{
+  if(!candidateExport)return;
+  const generation=candidateGeneration;
+  try{
+    if(!navigator.clipboard?.writeText)throw Error('Clipboard unavailable');
+    await navigator.clipboard.writeText(candidateExport.text);
+    if(generation===candidateGeneration)$('game-candidate-message').textContent='Candidate JSON copied. It remains untrusted until separately reviewed.';
+  }catch{
+    if(generation!==candidateGeneration)return;
+    $('game-candidate-json').focus();$('game-candidate-json').select();
+    $('game-candidate-message').textContent='Automatic copy is unavailable here. Copy the selected JSON manually or use Download JSON.';
+  }
+};
+$('game-candidate-download').onclick=()=>{
+  if(!candidateExport)return;
+  const url=URL.createObjectURL(new Blob([candidateExport.text],{type:'application/json'})),link=document.createElement('a');
+  link.href=url;link.download=candidateExport.filename;document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+};
+async function previewGame(entry){
+  requireGameConnection();
+  const generation=++gamePreviewGeneration;
+  const current=()=>generation===gamePreviewGeneration&&$('game-preview-dialog').open;
+  resetGameCandidate();
+  $('game-preview-name').textContent=entry.name;$('game-preview-source').textContent='Reading game folder…';
+  $('game-metadata').replaceChildren();$('game-cover').textContent='XBOX 360';$('game-launch-files').replaceChildren();
+  renderGameCapabilities();$('game-preview-dialog').showModal();
+  const files=demo?demoFiles(entry.folder):(await api('browse',{path:entry.folder})).files;
+  if(!current())return;
+  const xex=files.filter(f=>!f.directory&&/\.xex$/i.test(f.name));
+  $('game-preview-source').textContent=demo?'Sample folder — no console connection':'Select a file to read metadata and verify its current bytes.';
+  if(!xex.length)$('game-launch-files').textContent='No XEX launch files in this folder. Open a game subfolder and save a shortcut.';
+  for(const file of xex){
+    const row=document.createElement('article');row.className='game-file';
+    const heading=document.createElement('h4'),badge=gameBadge({status:'unknown',label:'Not checked'}),buttons=document.createElement('div'),verify=document.createElement('button'),launch=document.createElement('button'),details=document.createElement('details'),summary=document.createElement('summary'),reportText=document.createElement('pre');
+    heading.textContent=file.name;buttons.className='game-actions';verify.className='secondary';verify.textContent='Read metadata & verify';
+    launch.className='secondary';launch.textContent='Validate & launch';summary.textContent='Verification details';
+    details.append(summary,reportText);details.hidden=true;buttons.append(verify,launch);row.append(heading,badge,buttons,details);$('game-launch-files').append(row);
+    const path=entry.folder+file.name;
+    const check=async()=>{
+      resetGameCandidate('Reading selected XEX…');badge.className='game-badge unknown';badge.textContent='Reading file…';details.hidden=true;
+      try{
+        const result=demo?{plugin:false,verification:{status:file.name==='default_mp.xex'?'mismatch':'verified',label:file.name==='default_mp.xex'?'Demo: differs from sample reference':'Demo: matches sample reference',actual_sha256:'Sample only — not a real hash',metadata:{title_id:'00000000',media_id:'00000000',version:'00000000',base_version:'00000000',disc:1,disc_count:1},references:[],game:{title:entry.name+' (sample)',source:'Demo'}}}:await api('games/inspect',{path});
+        if(!current())return;
+        const fresh=gameBadge(result.verification);badge.className=fresh.className;badge.textContent=fresh.textContent;
+        showGameMetadata(result,entry.name);offerGameCandidate(result);
+        const card=Array.from(document.querySelectorAll('.game-card')).find(c=>c.dataset.shortcutId===String(entry.id));
+        if(card&&result.verification.game){
+          card.querySelector('h3').textContent=result.verification.game.title;
+          if(result.verification.game.cover){const image=document.createElement('img');image.src=result.verification.game.cover;image.alt=result.verification.game.title+' cover';card.querySelector('.game-cover').replaceChildren(image);}
+        }
+        reportText.textContent=JSON.stringify({checked_at:new Date().toISOString(),...result.verification,game:undefined},null,2);details.hidden=false;
+        launch.disabled=result.plugin||['mismatch','revoked'].includes(result.verification.status);
+        launch.title=result.plugin?'Plugin modules cannot launch as games.':launch.disabled?'File differs from a reviewed baseline or is revoked.':'';
+      }catch(e){if(current()){resetGameCandidate('Inspection unavailable. Read a valid console XEX before proposing a baseline.');badge.className='game-badge unknown';badge.textContent='? Check unavailable';}throw e;}
+    };
+    verify.onclick=()=>task(check);
+    launch.onclick=()=>task(async()=>{requireGameConnection();$('game-preview-dialog').close();await inspect(path);});
+    if(file.name===entry.executable){await check();if(!current())return;}
+  }
+}

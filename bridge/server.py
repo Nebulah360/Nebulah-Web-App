@@ -4,10 +4,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from repositories import Repositories
 from game_paths import GamePaths
-from game_catalog import verify_game, capabilities
+from game_catalog import verify_game, capabilities, candidate_from_inspection
 from hash_registry import load_catalog, public_build, verify_digest, RegistryError
 ROOT = Path(__file__).resolve().parents[1]
 MAX_XEX = 64 * 1024 * 1024
+GAME_INSPECTION_TTL = 600
+MAX_GAME_INSPECTIONS = 32
 
 def validate_xex(data):
     if len(data) < 24 or len(data) > MAX_XEX or data[:4] != b'XEX2':
@@ -71,7 +73,7 @@ def sanitize_telemetry(s):
 
 class Bridge:
     def __init__(self, powershell):
-        self.powershell=powershell; self.target=None; self.drives=[]; self.tickets={}; self.private_tickets={}
+        self.powershell=powershell; self.target=None; self.drives=[]; self.tickets={}; self.private_tickets={}; self.game_inspections={}
     def adapter(self, action, **kwargs):
         p=subprocess.run([self.powershell,'-NoProfile','-NonInteractive','-File',str(ROOT/'bridge/neighborhood.ps1')],
              input=json.dumps({'action':action,'target':self.target or '',**kwargs}),text=True,capture_output=True,timeout=40)
@@ -122,16 +124,40 @@ class Bridge:
         if action=='connect':
             target=data.get('target','')
             if not isinstance(target,str) or not re.fullmatch(r'[A-Za-z0-9_.-]{0,253}',target):raise ValueError('Invalid console name or local IP.')
-            self.target=target; self.drives=[]; self.tickets={}; self.private_tickets={}
+            self.target=target; self.drives=[]; self.tickets={}; self.private_tickets={}; self.game_inspections={}
             return self.status()
         if self.target is None:raise ValueError('Connect a console first.')
         if action=='status':return self.status()
         if action.startswith('games/'):
-            store=GamePaths()
             if action=='games/inspect':
                 path=safe_path(data.get('path'),self.drives)
                 v=self.inspect(path)
-                return {'file':path.rsplit('\\',1)[-1], 'plugin':v['plugin'], 'verification':verify_game(v,path.rsplit('\\',1)[-1]), 'capabilities':capabilities()}
+                filename=path.rsplit('\\',1)[-1]
+                result={'file':filename, 'plugin':v['plugin'], 'verification':verify_game(v,filename), 'capabilities':capabilities()}
+                now=time.monotonic()
+                self.game_inspections={k:s for k,s in self.game_inspections.items() if s['expires']>now}
+                try:
+                    candidate_from_inspection(v,filename,'Pending user title','Pending user provenance')
+                except ValueError:
+                    result['candidate_unavailable']='A non-plugin XEX with complete, valid execution metadata is required.'
+                else:
+                    if len(self.game_inspections)>=MAX_GAME_INSPECTIONS:
+                        del self.game_inspections[next(iter(self.game_inspections))]
+                    inspection=secrets.token_urlsafe(24)
+                    self.game_inspections[inspection]={'filename':filename, 'value':v, 'target':self.target, 'expires':now+GAME_INSPECTION_TTL}
+                    result.update(inspection_id=inspection, candidate_expires_in=GAME_INSPECTION_TTL)
+                return result
+            if action=='games/propose':
+                if set(data)-{'inspection_id','title','provenance'}:
+                    raise ValueError('Only the inspection ID, title and provenance may be supplied.')
+                inspection=data.get('inspection_id')
+                snapshot=self.game_inspections.get(inspection) if isinstance(inspection,str) else None
+                if snapshot is None or snapshot['expires']<=time.monotonic() or snapshot['target']!=self.target:
+                    raise ValueError('Inspection expired or unavailable. Read the file again.')
+                # No file/catalog write, launch ticket, or client-supplied measured metadata.
+                candidate=candidate_from_inspection(snapshot['value'],snapshot['filename'],data.get('title'),data.get('provenance'))
+                return {'candidate':candidate}
+            store=GamePaths()
             if action=='games/list':return {'shortcuts':store.list(self.target)}
             if action=='games/remove':return store.remove(self.target,data.get('id'))
             if action=='games/save':

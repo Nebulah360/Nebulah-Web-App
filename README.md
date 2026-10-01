@@ -43,6 +43,16 @@ Choose **Game preview** on a shortcut for an artwork/detail panel and individual
 
 Checks are per-file snapshots with timestamps; launching reads the file again. The game catalog starts empty, so real files will initially show unknown. See [game baseline review instructions](registry/README.md#game-baselines-and-artwork) to propose measured references and optional artwork. A modified file is not automatically malicious, and a green check is not a general safety guarantee.
 
+### Propose a game baseline from the console
+
+1. Open **Game preview** and use **Read metadata & verify** on the XEX you want to propose (the shortcut's selected launch file is inspected automatically).
+2. Under **Propose a baseline**, check the selected filename, size and SHA-256. Enter the **Game title** and **Provenance**, describing its source, edition and any known modifications. These are your claims, not inferred review evidence.
+3. Choose **Generate candidate JSON**, then **Copy JSON** or **Download JSON**. If clipboard access is unavailable, copy the selected JSON manually or download it.
+
+The export contains one game-baseline entry with the inspected filename, Title ID, Media ID, raw version/base version, SHA-256 and size. It always has `state: "candidate"` and `unmodified: false`, with no review evidence or trust grant. Here `false` means unmodified provenance has not been attested; it is not a finding that the file was modified. The existing check color and `registry/games.json` remain unchanged. Submit the entry through the [separate baseline review process](registry/README.md#game-baselines-and-artwork); only a separately reviewed exact match can turn green.
+
+Proposals use a bridge-held snapshot of the actual inspected bytes, valid for 10 minutes and cleared on reconnect. Up to 32 recent snapshots are kept in memory; older ones may expire earlier. Reinspect if the file changes or the snapshot expires. Unknown catalog files can be proposed when their execution metadata is complete; malformed XEX files, missing metadata and plugin modules cannot. Demo data cannot be exported as a console baseline. Exporting reads no private console fields, issues no launch ticket and performs no console/catalog write. Browser/API tests use synthetic files; Windows/console smoke testing remains pending.
+
 **Trainers, title updates and GSC injection:** their preview sections are present but execution is unavailable. The current Neighborhood adapter has no tested implementations for these operations; GSC applicability and the active title update are not inferred from a filename. Automatic Aurora metadata/artwork import is also pending.
 
 ## Open on your phone
@@ -100,9 +110,10 @@ python -m unittest discover -s tests -v
 node --check dist/app.js
 node --check dist/theme.js
 node --test tests/theme.test.cjs
+node --test tests/game_candidates.test.cjs
 ```
 
-Node is only needed for the JavaScript syntax check, not to run the app. No npm install or third-party Python package is required.
+Node is only needed for JavaScript syntax checks and tests, not to run the app. Candidate UI tests use a dependency-free DOM harness; they do not establish real-browser or console compatibility. No npm install or third-party Python package is required.
 
 ## Console smoke-test checklist
 
@@ -114,6 +125,7 @@ Node is only needed for the JavaScript syntax check, not to run the app. No npm 
 - Launch that homebrew after saving the current title's progress.
 - Check malformed XEX and DLL modules cannot launch.
 - Test a phone on the same trusted network, stale tickets, disconnected console and changed files.
+- From Game preview, export an unknown game XEX candidate, compare its fields/hash/size to the inspected file, and confirm copy/download work on PC and phone. Verify it remains gray/unknown and the catalog is unchanged; reconnect and confirm a fresh inspection is required.
 
 Do not promote to the stable public release channel until this checklist passes. This repository is the user-designated development repository; do not mirror testing commits into Nebulah Dash's stable repository.
 

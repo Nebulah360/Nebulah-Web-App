@@ -2,6 +2,7 @@
 import argparse, math, hashlib, hmac, ipaddress, json, os, re, secrets, struct, subprocess, tempfile, time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from hash_registry import load_catalog, public_build, verify_digest, RegistryError
 ROOT = Path(__file__).resolve().parents[1]
 MAX_XEX = 64 * 1024 * 1024
 
@@ -34,7 +35,7 @@ def validate_xex(data):
     if not flags & 1:
         raise ValueError('XEX does not declare an executable module.')
     return {'valid':True, 'plugin':bool(flags & 8), 'hash':hashlib.sha256(data).hexdigest(),
-            'checks':['XEX2 magic and executable flag','Header and security bounds','Optional-header bounds']}
+            'size':len(data), 'checks':['XEX2 magic and executable flag','Header and security bounds','Optional-header bounds']}
 
 def safe_path(path, drives):
     if not isinstance(path, str) or len(path)>512 or not re.fullmatch(r'[A-Za-z0-9_]+:\\[^\x00-\x1f"<>|?*:/]*',path):
@@ -83,6 +84,15 @@ class Bridge:
             if dest.stat().st_size>MAX_XEX:raise ValueError('XEX exceeds inspection size limit.')
             return validate_xex(dest.read_bytes())
     def dispatch(self,action,data):
+        if action=='registry/list':
+            catalog,revision=load_catalog()
+            return {'builds':[public_build(b) for b in catalog['builds']],'catalog_revision':revision}
+        if action=='registry/check':
+            result=verify_digest(data.get('sha256'),data.get('size'),data.get('build_id'))
+            result['measurement']='caller-supplied-digest'
+            # This endpoint does not read bytes or authorize installation.
+            result['eligible_for_install']=False
+            return result
         if action=='connect':
             target=data.get('target','')
             if not isinstance(target,str) or not re.fullmatch(r'[A-Za-z0-9_.-]{0,253}',target):raise ValueError('Invalid console name or local IP.')
@@ -117,11 +127,15 @@ class Bridge:
                 if isinstance(f.get('name'),str) and re.fullmatch(r'[^\\/\x00-\x1f:]+',f['name']) and f['name'] not in ('.','..')][:10000]}
         if action=='validate':
             path=safe_path(data.get('path'),self.drives);v=self.inspect(path)
+            try:verification=verify_digest(v['hash'],v['size'],data.get('build_id'))
+            except RegistryError:verification={'status':'registry-error','eligible_for_install':False,'discrepancies':['Catalog unavailable or malformed.']}
+            verification['measurement']='console-file-bytes'
+            blocked=verification['status'] in ('revoked','mismatch','unknown-build','registry-error')
             self.tickets={k:t for k,t in self.tickets.items() if t['expires']>time.monotonic()}
             ticket=secrets.token_urlsafe(24)
-            if not v['plugin']:
-                self.tickets[ticket]={'path':path,'hash':v['hash'],'expires':time.monotonic()+120}
-            return {**v,'ticket':ticket}
+            if not v['plugin'] and not blocked:
+                self.tickets[ticket]={'path':path,'hash':v['hash'],'expires':time.monotonic()+120,'build_id':data.get('build_id')}
+            return {**v,'verification':verification,'ticket':None if blocked or v['plugin'] else ticket}
         if action=='launch':
             ticket=data.get('ticket')
             if not isinstance(ticket,str):raise ValueError('A validation ticket is required.')
@@ -129,6 +143,9 @@ class Bridge:
             if not t or t['expires']<time.monotonic():raise ValueError('Inspection expired. Inspect the XEX again.')
             v=self.inspect(t['path'])
             if v['plugin'] or not hmac.compare_digest(v['hash'],t['hash']):raise ValueError('File changed. Inspect it again before launching.')
+            # Reload catalog so revocation after inspection invalidates the launch.
+            verification=verify_digest(v['hash'],v['size'],t.get('build_id'))
+            if verification['status'] in ('revoked','mismatch','unknown-build'):raise ValueError('Build verification rejected launch.')
             self.adapter('launch',path=t['path'])
             return {'accepted':True}
         raise ValueError('Capability not available in this base adapter.')

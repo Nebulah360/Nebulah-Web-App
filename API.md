@@ -25,3 +25,9 @@ The browser polls status every 10 seconds while visible and idle. Last-success a
 ## Explicitly confirmed CPU-key reveal
 
 Both routes use the same pairing-token and same-origin protections as other API operations. `POST /api/cpu-key/prepare` with `{}` returns a `confirmation_ticket` valid for 60 seconds; it performs no console read. After the user confirms, `POST /api/cpu-key/reveal` with `{ "confirmation_ticket": "...", "confirmed": true }` returns `{ "cpu_key": "<32 uppercase hex characters>" }` if supported. Tickets are single-use, expire, and are invalidated on connect. Missing/false/non-boolean consent cannot invoke the adapter. An invalid or unsupported response fails closed with the generic error response; the raw plugin response is never returned. Status remains key-free. Consent is enforced as an API workflow; authenticated custom clients are responsible for presenting their own confirmation UI.
+
+## Build registry
+
+Authenticated `registry/list` returns `builds` plus the catalog content revision. `registry/check` takes `sha256`, integer `size`, and optional `build_id`; returns status, actual digest/size, expected record, matches, discrepancies and catalog revision. This is a caller-supplied digest lookup, not a server byte check, and always returns `eligible_for_install: false`. Neither route needs a console connection.
+
+`validate` accepts optional `build_id` and now returns `size` and `verification` measured from actual console-file bytes. Revoked/mismatched/unknown-selected builds and registry errors get no launch ticket. Launch reloads the catalog to honor revocations and compares the bytes again. Unknown/unreviewed local applications retain manual structural launch behavior; they are not labeled reviewed. The CLI `tools/xex_registry.py verify FILE --build ID` provides the stricter actual-file, reviewed-only preinstall gate. See `registry/README.md` for status semantics and trust limitations.

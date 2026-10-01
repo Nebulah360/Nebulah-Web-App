@@ -13,3 +13,5 @@
 - This is the development repository specified by the user. Stable promotion is separate; never push this work into Dash's stable repo automatically.
 
 - The user explicitly authorized optional CPU-key display. Preserve fresh confirmation before each read, short-lived single-use consent, no status/log/storage inclusion, and automatic UI hiding. This does not authorize other private-information features.
+
+- Reviewed-build registry entries require actual-byte hashes and documented review/hardware evidence. Never mark repository checksums or unknown artifacts safe automatically. Preserve selected-build mismatch handling, revocations and fail-closed preinstall checks.

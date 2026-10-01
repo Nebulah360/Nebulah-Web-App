@@ -3,6 +3,8 @@ import argparse, sys, math, hashlib, hmac, ipaddress, json, os, re, secrets, str
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from repositories import Repositories
+from game_paths import GamePaths
+from game_catalog import verify_game, capabilities
 from hash_registry import load_catalog, public_build, verify_digest, RegistryError
 ROOT = Path(__file__).resolve().parents[1]
 MAX_XEX = 64 * 1024 * 1024
@@ -20,6 +22,7 @@ def validate_xex(data):
     if security_size < 0x180 or security + security_size > pe:
         raise ValueError('Invalid security header size.')
     keys = set()
+    metadata = {}
     for i in range(count):
         key, value = struct.unpack_from('>II', data, 24 + i*8)
         if key in keys:
@@ -33,10 +36,13 @@ def validate_xex(data):
         length = struct.unpack_from('>I', data, value)[0] if size == 255 else size * 4
         if length < 4 or value + length > pe:
             raise ValueError('Invalid optional header length.')
+        if key == 0x00040006:
+            media, version, base_version, title = struct.unpack_from('>4I', data, value)
+            metadata = {'title_id':f'{title:08X}', 'media_id':f'{media:08X}', 'version':f'{version:08X}', 'base_version':f'{base_version:08X}', 'disc':data[value+18], 'disc_count':data[value+19]}
     if not flags & 1:
         raise ValueError('XEX does not declare an executable module.')
     return {'valid':True, 'plugin':bool(flags & 8), 'hash':hashlib.sha256(data).hexdigest(),
-            'size':len(data), 'checks':['XEX2 magic and executable flag','Header and security bounds','Optional-header bounds']}
+            'size':len(data), 'metadata':metadata, 'checks':['XEX2 magic and executable flag','Header and security bounds','Optional-header bounds']}
 
 def safe_path(path, drives):
     if not isinstance(path, str) or len(path)>512 or not re.fullmatch(r'[A-Za-z0-9_]+:\\[^\x00-\x1f"<>|?*:/]*',path):
@@ -120,6 +126,25 @@ class Bridge:
             return self.status()
         if self.target is None:raise ValueError('Connect a console first.')
         if action=='status':return self.status()
+        if action.startswith('games/'):
+            store=GamePaths()
+            if action=='games/inspect':
+                path=safe_path(data.get('path'),self.drives)
+                v=self.inspect(path)
+                return {'file':path.rsplit('\\',1)[-1], 'plugin':v['plugin'], 'verification':verify_game(v,path.rsplit('\\',1)[-1]), 'capabilities':capabilities()}
+            if action=='games/list':return {'shortcuts':store.list(self.target)}
+            if action=='games/remove':return store.remove(self.target,data.get('id'))
+            if action=='games/save':
+                folder=safe_path(data.get('folder'),self.drives).rstrip('\\')+'\\'
+                executable=data.get('executable','')
+                if not isinstance(executable,str) or (executable and (not re.fullmatch(r'[^\\/\x00-\x1f"<>|?*:.]+\.xex',executable,re.I))):
+                    raise ValueError('Choose an XEX filename within this folder.')
+                # Confirm the folder can be browsed, and an optional launch file exists.
+                files=self.dispatch('browse',{'path':folder})['files']
+                if executable and not any(not f['directory'] and f['name'].lower()==executable.lower() for f in files):
+                    raise ValueError('Selected XEX was not found in this folder.')
+                return store.save(self.target,data.get('name'),folder,executable)
+            raise ValueError('Unknown games operation.')
         if action=='cpu-key/prepare':
             # Preparing consent never queries the console or reads private data.
             now=time.monotonic()
@@ -150,12 +175,14 @@ class Bridge:
             try:verification=verify_digest(v['hash'],v['size'],data.get('build_id'))
             except RegistryError:verification={'status':'registry-error','eligible_for_install':False,'discrepancies':['Catalog unavailable or malformed.']}
             verification['measurement']='console-file-bytes'
-            blocked=verification['status'] in ('revoked','mismatch','unknown-build','registry-error')
+            try:game_verification=verify_game(v,path.rsplit('\\',1)[-1])
+            except (ValueError,OSError):game_verification={'status':'catalog-error','label':'Game catalog unavailable'}
+            blocked=game_verification['status'] in ('mismatch','revoked','catalog-error') or verification['status'] in ('revoked','mismatch','unknown-build','registry-error')
             self.tickets={k:t for k,t in self.tickets.items() if t['expires']>time.monotonic()}
             ticket=secrets.token_urlsafe(24)
             if not v['plugin'] and not blocked:
                 self.tickets[ticket]={'path':path,'hash':v['hash'],'expires':time.monotonic()+120,'build_id':data.get('build_id')}
-            return {**v,'verification':verification,'ticket':None if blocked or v['plugin'] else ticket}
+            return {**v,'verification':verification,'game_verification':game_verification,'ticket':None if blocked or v['plugin'] else ticket}
         if action=='launch':
             ticket=data.get('ticket')
             if not isinstance(ticket,str):raise ValueError('A validation ticket is required.')
@@ -166,6 +193,8 @@ class Bridge:
             # Reload catalog so revocation after inspection invalidates the launch.
             verification=verify_digest(v['hash'],v['size'],t.get('build_id'))
             if verification['status'] in ('revoked','mismatch','unknown-build'):raise ValueError('Build verification rejected launch.')
+            game_verification=verify_game(v,t['path'].rsplit('\\',1)[-1])
+            if game_verification['status'] in ('mismatch','revoked'):raise ValueError('Game baseline rejected launch.')
             self.adapter('launch',path=t['path'])
             return {'accepted':True}
         raise ValueError('Capability not available in this base adapter.')
@@ -176,7 +205,7 @@ class Handler(BaseHTTPRequestHandler):
         raw=json.dumps(body).encode() if kind=='application/json' else body
         self.send_response(status);self.send_header('Content-Type',kind);self.send_header('Content-Length',str(len(raw)))
         self.send_header('Cache-Control','no-store');self.send_header('X-Content-Type-Options','nosniff')
-        self.send_header('Content-Security-Policy',"default-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
+        self.send_header('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
         self.end_headers();self.wfile.write(raw)
     def host_ok(self):return self.headers.get('Host') in self.server.allowed_hosts
     def do_GET(self):

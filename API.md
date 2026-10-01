@@ -44,3 +44,15 @@ All routes retain pairing-token and same-origin checks. No console is required f
 - `plugins/remove {name}` → remove metadata registration only.
 
 Limits: 50 repository subscriptions and 100 plugin registrations. Storage is host-local SQLite. API checks do not accept arbitrary URLs/hosts or fetch executable artifacts. A revision change is independent of reviewed-build hash verification and does not approve installation.
+
+## Game shortcuts
+
+Authenticated, same-origin requests require a connected console. Entries are scoped to the selected target name/IP; blank means the Neighborhood default profile.
+
+- `POST /api/games/list` `{}` returns `shortcuts` with `id`, `name`, `folder`, and `executable`.
+- `POST /api/games/save` `{name, folder, executable}` saves or renames the same folder/file shortcut. `executable` is an optional filename within the folder, or an empty string. The bridge verifies the discovered root, browses the folder, and checks file presence.
+- `POST /api/games/remove` `{id}` removes only that target's shortcut. No console files are deleted.
+
+These endpoints issue no launch tickets. Use the existing `validate` and confirmed `launch` flow.
+
+`POST /api/games/inspect` `{path}` reads a console XEX and returns its filename, plugin flag, game verification report (including allowlisted execution metadata, optional local catalog artwork and reviewed references), and extension capability states. It does not launch, load plugins, or issue a launch ticket. Use one request per file to bound transfers; XEX inspection remains limited to 64 MiB. Trainer, title-update, and GSC actions are unavailable in the current adapter; unknown API operations are rejected. `validate` also returns `game_verification`, and game mismatch/revocation blocks ticket creation and launch.

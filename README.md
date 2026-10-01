@@ -25,6 +25,26 @@ The bridge defaults to 32-bit Windows PowerShell for XDevkit COM. If your COM re
 py -3 bridge/server.py --powershell C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
 ```
 
+## Game folder shortcuts
+
+Open **Games** in the sidebar, select a discovered storage root, and browse to a game folder. Enter a shortcut name and save. To enable **Validate & launch**, choose **Use launch file** beside an XEX before saving. A folder-only shortcut opens that folder for browsing.
+
+Shortcuts persist in `.local/games.sqlite3` on the Windows bridge and are shared by paired browsers and phones. They are grouped by the entered Neighborhood console name/IP (case-insensitive). A blank connection target uses a shared default profile; use explicit console names when managing multiple consoles or changing Neighborhood's default. Demo shortcuts are separate and last only for the page session.
+
+Saving confirms the folder is accessible and any selected XEX exists. Every launch still inspects the current file, applies registry checks, requires confirmation, and rechecks the file before execution. Removing a shortcut only removes its saved entry. Shortcut support has automated coverage but still needs a real-console smoke test.
+
+### Game preview and file checks
+
+Choose **Game preview** on a shortcut for an artwork/detail panel and individual XEX launch files. The selected launch file is read automatically; use **Read metadata & verify** for other files such as `default_mp.xex`. Title ID, Media ID, file version and disc metadata come from the XEX. Game names and optional cover art come from the local game catalog; missing artwork gets a placeholder. This is a game-details preview, not a live console video stream.
+
+- **Green check:** exact match to a reviewed unmodified game baseline.
+- **Red check:** mismatch against matching reviewed baselines or a revoked file; launch is blocked.
+- **Gray question mark:** not checked, unavailable, or no reviewed baseline for this file/edition/version.
+
+Checks are per-file snapshots with timestamps; launching reads the file again. The game catalog starts empty, so real files will initially show unknown. See [game baseline review instructions](registry/README.md#game-baselines-and-artwork) to propose measured references and optional artwork. A modified file is not automatically malicious, and a green check is not a general safety guarantee.
+
+**Trainers, title updates and GSC injection:** their preview sections are present but execution is unavailable. The current Neighborhood adapter has no tested implementations for these operations; GSC applicability and the active title update are not inferred from a filename. Automatic Aurora metadata/artwork import is also pending.
+
 ## Open on your phone
 
 Find the PC's private IPv4 address with `ipconfig`, then bind the bridge to that exact address. Example only — replace the address with your PC's address:

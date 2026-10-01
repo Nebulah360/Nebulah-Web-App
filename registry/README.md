@@ -43,3 +43,24 @@ Repository download/install automation itself does not yet exist in Nebulah Link
 The catalog is versioned with the app's Git checkout. Only use a trusted maintainer-reviewed checkout. The catalog revision is a SHA-256 content fingerprint, **not a signature**. Local file modification can change trust; remote catalog refresh/signing/rollback protection is not implemented. Offline copies cannot learn newer revocations until updated. The UI must never advertise freshness or signature validation it has not established.
 
 Ordinary user-requested console launches may still launch structurally valid unknown/candidate builds after the existing confirmation; they are labeled unreviewed. A selected-build mismatch, revocation, unknown selected ID or malformed/unavailable registry blocks the launch ticket. Future repository installs use the stricter reviewed-only gate above.
+
+## Game baselines and artwork
+
+`games.json` is separate from the source-build catalog. Retail game files do not require a GitHub source repository. No executable, proprietary game data, fabricated checksum, or approved retail reference is shipped.
+
+Measure your own reference file:
+
+```powershell
+py -3 tools/game_baselines.py propose path\default_mp.xex --id game-release-mp --title "Game title" --provenance "Document the source and edition of this reference" --cover path\cover.jpg
+py -3 tools/game_baselines.py lint
+```
+
+The proposal prints one candidate entry. Add it to the `builds` array in `registry/games.json`. Optional artwork must be a local PNG/JPEG no larger than 512 KiB and is embedded in the entry; the browser does not contact an artwork service. Only distribute artwork you have permission to include. Metadata/cover presentation is separate from verification.
+
+Approval requires an independent review of the reference's unmodified provenance: set `unmodified` to `true`, `state` to `reviewed`, and add a `review` object with nonempty `reviewer`, ISO `date` (`YYYY-MM-DD`), `evidence`, and `hardware_test`. Merely copying these fields is not evidence. Never promote a file just because it runs or matches an untrusted published checksum. Proposals are never automatically approved.
+
+Matching uses filename, Title ID, Media ID, raw file version and base version, then exact SHA-256 and size. Several reviewed references can represent legitimate variants. Green means exact bytes matching one of these reviewed unmodified references; it does not establish publisher authenticity or general safety. Red means different bytes from the available matching reference set, or a revoked hash. A mismatch can also indicate an unrecorded legitimate variant, not necessarily malicious modification. Missing references, other versions/media, and candidates stay gray/unknown. Revoked hashes are rejected regardless of filename. Set `state` to `revoked` with `revocation_reason` to revoke a reference.
+
+Game previews show verification details and a check timestamp per XEX. They do not issue launch tickets. Launch re-reads the file and checks both catalogs, including revocations, before executing. Catalog errors fail closed. Game metadata extraction uses the bounded XEX execution-info header (`0x40006`); it excludes private console fields. File versions are not a report of the active title update.
+
+Format reference: [Xenia Manager XEX execution-info structure](https://github.com/xenia-manager/xenia-manager/blob/main/source/XeniaManager.Core/Models/Files/Xex/XexExecutionInfo.cs).

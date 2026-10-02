@@ -1,0 +1,55 @@
+name: Source and host validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# These checks do not establish real-browser, Windows Neighborhood, Xbox console,
+# CPU-key, launch, or hardware acceptance. Stable promotion remains separate.
+jobs:
+  validate:
+    name: Dependency-free source and host checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      - name: Run Python unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Check application JavaScript syntax
+        run: node --check dist/app.js
+
+      - name: Check theme JavaScript syntax
+        run: node --check dist/theme.js
+
+      - name: Run theme host tests
+        run: node --test tests/theme.test.cjs
+
+      - name: Run game candidate host tests
+        run: node --test tests/game_candidates.test.cjs
+
+      - name: Lint reviewed-build catalog
+        run: python tools/xex_registry.py lint
+
+      - name: Lint game baseline catalog
+        run: python tools/game_baselines.py lint

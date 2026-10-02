@@ -111,9 +111,13 @@ node --check dist/app.js
 node --check dist/theme.js
 node --test tests/theme.test.cjs
 node --test tests/game_candidates.test.cjs
+python tools/xex_registry.py lint
+python tools/game_baselines.py lint
 ```
 
 Node is only needed for JavaScript syntax checks and tests, not to run the app. Candidate UI tests use a dependency-free DOM harness; they do not establish real-browser or console compatibility. No npm install or third-party Python package is required.
+
+[Source and host validation](.github/workflows/source-host-validation.yml) runs these checks on pull requests targeting `main` and pushes to `main`, with read-only repository permissions. Any test, syntax or catalog-lint error fails CI. A passing run does not establish real-browser, Windows Neighborhood, Xbox console, CPU-key, launch or hardware acceptance; stable promotion still requires separate evidence.
 
 ## Console smoke-test checklist
 

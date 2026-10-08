@@ -1,0 +1,6 @@
+# Runtime: Python 3.10+ with sqlite3 (standard official Windows Python includes it).
+# No third-party Python packages. No pip install or npm install is required.
+# Windows PowerShell 5.1 and licensed Xbox 360 Neighborhood/XDevkit COM are
+# required for Xbox connection. macOS/Linux run local browser and saved-data
+# mode only; their launchers do not install packages or run PowerShell.
+# Start Nebulah Link.cmd installs missing Python through WinGet when available.

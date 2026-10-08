@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "description": "Classification hints and measured public-file observations. This is not the reviewed-build trust registry.",
+  "components": [
+    {"id":"aurora","name":"Aurora","category":"homebrew","filenames":["Aurora.xex"],"folders":["Aurora","Aurora 0.7b","Aurora 0.7b.2"],"launchers":["default.xex","Aurora.xex"],"sources":["https://github.com/XboxUnity"]},
+    {"id":"dashlaunch","name":"DashLaunch","category":"homebrew","filenames":["DashLaunch.xex"],"folders":["DashLaunch","DL30"],"launchers":["default.xex","launch.xex"],"sources":["https://github.com/X360Tools/J-Runner-Pro/blob/master/J-Runner/DashLaunch/DashLaunch.cs"],"notes":"DL30 is the user-specified DashLaunch folder alias. A generic launch.xex outside that folder is not identified as DashLaunch."},
+    {"id":"xelllaunch","name":"XeLLLaunch","category":"homebrew","filenames":["XellLaunch.xex","XellLaunch2.xex","XellLaunch2_retail.xex"],"folders":["XellLaunch","XellLaunch2"],"launchers":["default.xex","XellLaunch.xex","XellLaunch2.xex","XellLaunch2_retail.xex"],"sources":["https://github.com/mitchellwaite/XellLaunch2"]},
+    {"id":"xexmenu","name":"XeXMenu","category":"homebrew","filenames":["XeXMenu.xex"],"folders":["XeXMenu","XeXMenu 1.2"],"launchers":["default.xex","XeXMenu.xex"],"sources":["https://github.com/SaveEditors/xecli/blob/94fc19530610a3f3797afd2e6ae9dc2d1b3ef56b/wiki/Homebrew-and-USB.md"]},
+    {"id":"freestyle","name":"Freestyle Dash","category":"homebrew","filenames":["Freestyle.xex","FSD.xex"],"folders":["Freestyle","Freestyle Dash","Freestyle3","FSD","FSD3"],"launchers":["default.xex","Freestyle.xex","FSD.xex"],"sources":["https://github.com/XboxUnity/freestyledash"]},
+    {"id":"timefixer","name":"TimeFixer","category":"homebrew","filenames":["TimeFixer.xex"],"folders":["TimeFixer"],"launchers":["default.xex","TimeFixer.xex"],"sources":["https://github.com/DerfJagged/TimeFixer"]},
+    {"id":"xm360","name":"XM360","category":"homebrew","filenames":["XM360.xex"],"folders":["XM360"],"launchers":["default.xex","XM360.xex"],"sources":["https://github.com/SaveEditors/xecli/blob/94fc19530610a3f3797afd2e6ae9dc2d1b3ef56b/wiki/Homebrew-and-USB.md"]},
+    {"id":"simple-nand-flasher","name":"Simple 360 NAND Flasher","category":"homebrew","filenames":[],"folders":["Simple 360 NAND Flasher","Simple360NANDFlasher"],"launchers":["default.xex"],"sources":["https://github.com/SaveEditors/xecli/blob/94fc19530610a3f3797afd2e6ae9dc2d1b3ef56b/wiki/Homebrew-and-USB.md"]},
+    {"id":"snes360","name":"Snes360","category":"emulators","filenames":["Snes360.xex"],"folders":["Snes360","snes360-enhanced"],"launchers":["default.xex","Snes360.xex"],"sources":["https://github.com/frankischilling/snes360-enhanced"]},
+    {"id":"xbdm","name":"XBDM","category":"plugins","filenames":["xbdm.xex","xmdb.xex"],"folders":[],"launchers":[],"sources":["https://github.com/XeCrippy/py-xbdm"],"notes":"xmdb is a user-specified spelling alias only; it does not establish XBDM byte identity."},
+    {"id":"jrpc","name":"JRPC","category":"plugins","filenames":["JRPC.xex"],"folders":[],"launchers":[],"sources":["https://github.com/MobCat/xbdm.py"]},
+    {"id":"jrpc2","name":"JRPC2","category":"plugins","filenames":["JRPC2.xex"],"folders":[],"launchers":[],"sources":["https://github.com/XeCrippy/py-xbdm"]},
+    {"id":"xrpc","name":"XRPC / RPC","category":"plugins","filenames":["XRPC.xex","RPC.xex"],"folders":[],"launchers":[],"sources":["https://github.com/XeCrippy/py-xbdm"],"notes":"RPC and XRPC are related filename hints, not a claim that their binaries or protocols are interchangeable."},
+    {"id":"xdrpc","name":"XDRPC","category":"plugins","filenames":["XDRPC.xex"],"folders":[],"launchers":[],"sources":["https://github.com/XeCrippy/py-xbdm"]},
+    {"id":"nfinite","name":"Nfinite","category":"stealth","filenames":["Nfinite.xex","NfiniteLive.xex","Nfinite Live.xex"],"folders":["Nfinite","NfiniteLive","Nfinite Live"],"launchers":["default.xex"],"sources":["https://nfinite.live/"]},
+    {"id":"xbguard","name":"xbGuard","category":"stealth","filenames":["xbGuard.xex"],"folders":["xbGuard"],"launchers":["default.xex"],"sources":["https://xbguard.live/"]},
+    {"id":"tethered","name":"Tethered Live","category":"stealth","filenames":["Tethered.xex","TetheredLive.xex","Teathered.xex"],"folders":["Tethered","Tethered Live","TetheredLive","Teathered"],"launchers":["default.xex"],"sources":["https://tethered.live/"],"notes":"Teathered is a user-specified spelling alias only."}
+  ],
+  "observed_hashes": [
+    {
+      "component_id": "xelllaunch",
+      "sha256": "414492ce7ded99d9d8efe7e35407168cdf4f357c0b4bbff0cf6f27e473a7b2ec",
+      "size": 26624,
+      "plugin": false,
+      "state": "observed",
+      "observed_at": "2026-10-06",
+      "source_url": "https://github.com/SaveEditors/xecli/blob/94fc19530610a3f3797afd2e6ae9dc2d1b3ef56b/Assets/XellLaunch/default.xex",
+      "repository": "https://github.com/SaveEditors/xecli",
+      "commit": "94fc19530610a3f3797afd2e6ae9dc2d1b3ef56b",
+      "git_blob_sha": "2607a33d289729db12657db7e5ce67451441fb0a",
+      "reviewed": false,
+      "hardware_tested": false,
+      "evidence": "SHA-256 and byte count measured from the complete base64-decoded GitHub blob; Git blob SHA-1 checked against the pinned tree. Mirror provenance only; original publisher build provenance and hardware compatibility were not verified. No binary is bundled."
+    }
+  ]
+}

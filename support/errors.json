@@ -1,0 +1,314 @@
+{
+  "schema_version": 1,
+  "product": "Nebulah Link",
+  "errors": {
+    "PLATFORM_UNSUPPORTED": {
+      "support_code": "NB-H01",
+      "message": "Xbox connection needs Windows.",
+      "next_step": "Use Windows with licensed Xbox 360 Neighborhood. macOS/Linux can run the local browser and keep saved data, but cannot connect to the Xbox.",
+      "escalate": "If Windows reports this error, share the support report and platform version. Never post tokens or keys.",
+      "bot_reply": "NB-H01: Xbox connection needs Windows.\nNext: Use Windows with licensed Xbox 360 Neighborhood. macOS/Linux can run the local browser and keep saved data, but cannot connect to the Xbox."
+    },
+    "RECOVERY_REQUIRED": {
+      "support_code": "NB-R01",
+      "message": "Console access is paused.",
+      "next_step": "Check the console is responsive, then choose Connect console. Restart the console first if it froze.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-R01: Console access is paused.\nNext: Check the console is responsive, then choose Connect console. Restart the console first if it froze.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "TRANSFER_CREATE_FAILED": {
+      "support_code": "NB-T01",
+      "message": "The upload could not finish sending.",
+      "next_step": "Keep any partial file. Check the console is responsive, then reconnect. Do not unplug Ethernet to test.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-T01: The upload could not finish sending.\nNext: Keep any partial file. Check the console is responsive, then reconnect. Do not unplug Ethernet to test.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "TRANSFER_READBACK_FAILED": {
+      "support_code": "NB-T02",
+      "message": "The uploaded file could not be checked.",
+      "next_step": "Keep the partial file. Check the console is responsive before reconnecting.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-T02: The uploaded file could not be checked.\nNext: Keep the partial file. Check the console is responsive before reconnecting.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "TRANSFER_INFO_FAILED": {
+      "support_code": "NB-T09",
+      "message": "The selected console file could not be inspected.",
+      "next_step": "Refresh the file picker and check whether that exact file opens in Neighborhood. Retry after confirming the drive is available.",
+      "escalate": "If this repeats, share the copied support report without file contents, pairing tokens, keys or serial numbers.",
+      "bot_reply": "NB-T09: The selected console file could not be inspected.\nNext: Refresh the file picker and check whether that exact file opens in Neighborhood."
+    },
+    "TRANSFER_READ_FAILED": {
+      "support_code": "NB-T03",
+      "message": "The console file could not be read.",
+      "next_step": "Check that the exact file opens in Neighborhood and the console is responsive, then retry the download or inspection.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-T03: The console file could not be read.\nNext: Check that the exact file opens in Neighborhood and the console is responsive, then retry.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "TRANSFER_RENAME_FAILED": {
+      "support_code": "NB-T04",
+      "message": "The upload could not confirm its final filename.",
+      "next_step": "After recovery, check for both the final file and partial before trying again.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-T04: The upload could not confirm its final filename.\nNext: After recovery, check for both the final file and partial before trying again.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "TRANSFER_CLEANUP_FAILED": {
+      "support_code": "NB-T08",
+      "message": "The failed upload partial could not be removed.",
+      "next_step": "Keep the exact partial path. Check the console is responsive, then retry cleanup once or remove that file in Neighborhood.",
+      "escalate": "If cleanup repeats, share the support report. Never post pairing tokens, CPU keys or serial numbers.",
+      "bot_reply": "NB-T08: The failed upload partial could not be removed.\nNext: Keep the exact partial path. Check the console is responsive, then retry cleanup once or remove that file in Neighborhood."
+    },
+    "TRANSFER_HASH_FAILED": {
+      "support_code": "NB-T05",
+      "message": "The file check could not finish.",
+      "next_step": "Keep the partial file and share the support report with staff.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-T05: The file check could not finish.\nNext: Keep the partial file and share the support report with staff.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "TRANSFER_APPEND_FAILED": {
+      "support_code": "NB-T06",
+      "message": "The upload stopped while writing.",
+      "next_step": "Keep the partial file and update the app before trying again.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-T06: The upload stopped while writing.\nNext: Keep the partial file and update the app before trying again.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "TRANSFER_WRITE_FAILED": {
+      "support_code": "NB-T07",
+      "message": "The console could not write the upload.",
+      "next_step": "Keep the partial file and check console recovery before reconnecting.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-T07: The console could not write the upload.\nNext: Keep the partial file and check console recovery before reconnecting.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "STORAGE_LIST_INVALID": {
+      "support_code": "NB-S01",
+      "message": "This folder could not be displayed.",
+      "next_step": "Update the app, then select the folder again. Share the report if it repeats.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-S01: This folder could not be displayed.\nNext: Update the app, then select the folder again. Share the report if it repeats.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "STORAGE_BROWSE_FAILED": {
+      "support_code": "NB-S02",
+      "message": "The console folder could not be opened.",
+      "next_step": "Check the console connection. If access is paused, confirm recovery before reconnecting.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-S02: The console folder could not be opened.\nNext: Check the console connection. If access is paused, confirm recovery before reconnecting.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "STORAGE_DISCOVERY_FAILED": {
+      "support_code": "NB-S03",
+      "message": "Console storage could not be listed.",
+      "next_step": "Check that Neighborhood can browse this console, then reconnect.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-S03: Console storage could not be listed.\nNext: Check that Neighborhood can browse this console, then reconnect.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "XDEVKIT_INTERFACE_FAILED": {
+      "support_code": "NB-C01",
+      "message": "Neighborhood is not ready for this app.",
+      "next_step": "Run Start Nebulah Link.cmd to check the installation. Share this report if it still fails.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-C01: Neighborhood is not ready for this app.\nNext: Run Start Nebulah Link.cmd to check the installation. Share this report if it still fails.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "XDEVKIT_COM_FAILED": {
+      "support_code": "NB-C02",
+      "message": "Neighborhood could not start.",
+      "next_step": "Install or repair your licensed Neighborhood copy, then run Start Nebulah Link.cmd.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-C02: Neighborhood could not start.\nNext: Install or repair your licensed Neighborhood copy, then run Start Nebulah Link.cmd.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "CONSOLE_OPEN_FAILED": {
+      "support_code": "NB-C03",
+      "message": "The console could not be reached.",
+      "next_step": "Check that it is on and connected to the network, then choose Connect console.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-C03: The console could not be reached.\nNext: Check that it is on and connected to the network, then choose Connect console.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "DEFAULT_CONSOLE_FAILED": {
+      "support_code": "NB-C04",
+      "message": "The default console could not be selected.",
+      "next_step": "Enter the console name or IP in Connect console.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-C04: The default console could not be selected.\nNext: Enter the console name or IP in Connect console.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "DEFAULT_CONSOLE_EMPTY": {
+      "support_code": "NB-C05",
+      "message": "No default console is set.",
+      "next_step": "Choose a default in Neighborhood or enter the console name or IP in Connect console.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-C05: No default console is set.\nNext: Choose a default in Neighborhood or enter the console name or IP in Connect console.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "POWERSHELL_NOT_FOUND": {
+      "support_code": "NB-P01",
+      "message": "Windows PowerShell was not found.",
+      "next_step": "Start the app with Start Nebulah Link.cmd on Windows.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-P01: Windows PowerShell was not found.\nNext: Start the app with Start Nebulah Link.cmd on Windows.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "POWERSHELL_START_FAILED": {
+      "support_code": "NB-P02",
+      "message": "Windows could not start the bridge helper.",
+      "next_step": "Run Start Nebulah Link.cmd and check whether Windows security blocked it.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-P02: Windows could not start the bridge helper.\nNext: Run Start Nebulah Link.cmd and check whether Windows security blocked it.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "POWERSHELL_POLICY": {
+      "support_code": "NB-P03",
+      "message": "Windows blocked the startup script.",
+      "next_step": "Unblock the downloaded ZIP in Properties and extract it again. On a managed PC, ask your administrator.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-P03: Windows blocked the startup script.\nNext: Unblock the downloaded ZIP in Properties and extract it again. On a managed PC, ask your administrator.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "ADAPTER_TIMEOUT": {
+      "support_code": "NB-A01",
+      "message": "The console request took too long.",
+      "next_step": "Check the console locally. If frozen, restart it before confirming recovery. Do not repeat unplug tests.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-A01: The console request took too long.\nNext: Check the console locally. If frozen, restart it before confirming recovery. Do not repeat unplug tests.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "ADAPTER_RESPONSE_INVALID": {
+      "support_code": "NB-A02",
+      "message": "The bridge helper returned an unreadable reply.",
+      "next_step": "Update all app files together. If console access is paused, check recovery before reconnecting.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-A02: The bridge helper returned an unreadable reply.\nNext: Update all app files together. If console access is paused, check recovery before reconnecting.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "ADAPTER_OPERATION_FAILED": {
+      "support_code": "NB-A03",
+      "message": "The console request did not finish.",
+      "next_step": "Check the console connection. Share the report if it repeats.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-A03: The console request did not finish.\nNext: Check the console connection. Share the report if it repeats.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "ADAPTER_PROCESS_FAILED": {
+      "support_code": "NB-A04",
+      "message": "The bridge helper stopped unexpectedly.",
+      "next_step": "Run Start Nebulah Link.cmd again after checking the console. Share the report if it repeats.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-A04: The bridge helper stopped unexpectedly.\nNext: Run Start Nebulah Link.cmd again after checking the console. Share the report if it repeats.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "PYTHON_MISSING": {
+      "support_code": "NB-B01",
+      "message": "Python is missing.",
+      "next_step": "Install Python from python.org/downloads/windows, then double-click Start Nebulah Link.cmd.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-B01: Python is missing.\nNext: Install Python from python.org/downloads/windows, then double-click Start Nebulah Link.cmd.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "PYTHON_INSTALL_FAILED": {
+      "support_code": "NB-B02",
+      "message": "Python could not be installed automatically.",
+      "next_step": "Check the WinGet message above, or install Python from python.org/downloads/windows.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-B02: Python could not be installed automatically.\nNext: Check the WinGet message above, or install Python from python.org/downloads/windows.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "PYTHON_RESTART_REQUIRED": {
+      "support_code": "NB-B03",
+      "message": "Python was installed but is not ready in this window.",
+      "next_step": "Close this window and double-click Start Nebulah Link.cmd again.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-B03: Python was installed but is not ready in this window.\nNext: Close this window and double-click Start Nebulah Link.cmd again.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "NEIGHBORHOOD_MISSING": {
+      "support_code": "NB-B04",
+      "message": "Neighborhood is not installed or registered.",
+      "next_step": "Install or repair your licensed Xbox 360 Neighborhood copy, then start again.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-B04: Neighborhood is not installed or registered.\nNext: Install or repair your licensed Xbox 360 Neighborhood copy, then start again.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "STARTUP_FAILED": {
+      "support_code": "NB-B05",
+      "message": "The app could not start.",
+      "next_step": "Check that the project was fully extracted into a writable folder. Share this support code if it repeats.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-B05: The app could not start.\nNext: Check that the project was fully extracted into a writable folder. Share this support code if it repeats.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "PAIRING_REJECTED": {
+      "support_code": "NB-U01",
+      "message": "Your session expired or the pairing token is incorrect.",
+      "next_step": "Choose Connect console and use the token from the running bridge window.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-U01: Your session expired or the pairing token is incorrect.\nNext: Choose Connect console and use the token from the running bridge window.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "BROWSER_ORIGIN_REJECTED": {
+      "support_code": "NB-U02",
+      "message": "This browser address is not allowed.",
+      "next_step": "Open the exact URL printed in the bridge window.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-U02: This browser address is not allowed.\nNext: Open the exact URL printed in the bridge window.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "BRIDGE_UNREACHABLE": {
+      "support_code": "NB-U03",
+      "message": "The browser could not reach the bridge.",
+      "next_step": "Keep the bridge window open and use its printed URL.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-U03: The browser could not reach the bridge.\nNext: Keep the bridge window open and use its printed URL.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    },
+    "MODULE_RUNTIME_UNAVAILABLE": {
+      "support_code": "NB-M01",
+      "message": "Module control is unavailable on this console.",
+      "next_step": "Check that JRPC2 is loaded and responding, then refresh Plugin workspace.",
+      "escalate": "Share the support report if the capability probe keeps failing. Never post keys or pairing tokens.",
+      "bot_reply": "NB-M01: Module control is unavailable. Check JRPC2 and refresh Plugin workspace."
+    },
+    "MODULE_FILE_CHANGED": {
+      "support_code": "NB-M06",
+      "message": "The selected XEX changed since its saved inspection or is no longer a DLL/plugin.",
+      "next_step": "Inspect the current file, review its new SHA-256, then choose Load again only if you trust those bytes.",
+      "escalate": "Share the support report and file name if the mismatch repeats. Never post keys or pairing tokens.",
+      "bot_reply": "NB-M06: XEX bytes differ from the saved inspection. Reinspect and review the new SHA-256 before loading."
+    },
+    "MODULE_LOAD_FAILED": {
+      "support_code": "NB-M02",
+      "message": "The console did not confirm the module load.",
+      "next_step": "Check the exact file and module list. Reinspect the XEX before retrying.",
+      "escalate": "Share the support report and module name if this repeats. Never post keys or pairing tokens.",
+      "bot_reply": "NB-M02: Module load was not confirmed. Reinspect the XEX and check loaded modules."
+    },
+    "MODULE_ALREADY_LOADED": {
+      "support_code": "NB-M04",
+      "message": "The selected module name already appears in the console module list. No load command was sent.",
+      "next_step": "Check the running module list and receiver. Unload safely or cold reboot before another load attempt.",
+      "escalate": "Share the support report and module name if the list looks wrong. Never post keys or pairing tokens.",
+      "bot_reply": "NB-M04: Module already listed. No new load was sent. Check the receiver before retrying."
+    },
+    "MODULE_LOAD_UNCONFIRMED": {
+      "support_code": "NB-M05",
+      "message": "The module appeared in the console list after an unconfirmed load reply.",
+      "next_step": "Do not load it again. Check the receiver and console, then use the module safe-unload procedure if needed.",
+      "escalate": "Share the support report and module name. Never post keys or pairing tokens.",
+      "bot_reply": "NB-M05: Module appeared after an unconfirmed load. Do not send a duplicate load."
+    },
+    "MODULE_UNLOAD_FAILED": {
+      "support_code": "NB-M03",
+      "message": "The console did not confirm the module was removed.",
+      "next_step": "Check the module list and console response. For 360Stream, wait for SAFE_TO_UNLOAD before retrying.",
+      "escalate": "Share the support report and module name if this repeats. Never post keys or pairing tokens.",
+      "bot_reply": "NB-M03: Module unload was not confirmed. Check the module list and SAFE_TO_UNLOAD for 360Stream."
+    },
+    "LAUNCH_INI_SAVE_FAILED": {
+      "support_code": "NB-L01",
+      "message": "Neighborhood could not confirm the active launch.ini update.",
+      "next_step": "Open the active launch.ini in Neighborhood. Check for a Nebulah .bak or .new recovery copy before retrying or rebooting.",
+      "escalate": "Share the support report and recovery filenames. Never post keys or pairing tokens.",
+      "bot_reply": "NB-L01: Plugin slot save unconfirmed. Check the active file and recovery copy before retrying."
+    },
+    "CONSOLE_NOTIFY_FAILED": {
+      "support_code": "NB-N01",
+      "message": "JRPC2 did not confirm the Xbox notification command.",
+      "next_step": "Check that JRPC2 is loaded and responding, then retry one test notification.",
+      "escalate": "Share the support report if this repeats. Never post keys or pairing tokens.",
+      "bot_reply": "NB-N01: Xbox notification command unconfirmed. Check JRPC2 and retry one test."
+    },
+    "CONSOLE_POWER_FAILED": {
+      "support_code": "NB-W01",
+      "message": "The console did not confirm the power command.",
+      "next_step": "Check the console locally before retrying; the command may have started before the connection closed.",
+      "escalate": "Share the support report if this repeats. Never post keys or pairing tokens.",
+      "bot_reply": "NB-W01: Console power command unconfirmed. Check the console locally before retrying."
+    },
+    "CONNECTION_REQUEST_INVALID": {
+      "support_code": "NB-U04",
+      "message": "The connection details were not accepted.",
+      "next_step": "Use a console name or IP only, without http:// or a port.",
+      "escalate": "If this repeats, share the copied support report. Never post pairing tokens, CPU keys, serial numbers or account data.",
+      "bot_reply": "NB-U04: The connection details were not accepted.\nNext: Use a console name or IP only, without http:// or a port.\nIf this repeats, share the copied support report with staff. Never post keys or pairing tokens."
+    }
+  }
+}
